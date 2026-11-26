@@ -44,6 +44,8 @@ jobs:
       - name: Render widget screenshot
         shell: bash
         run: |
+          # Qt's offscreen backend has no fonts on Windows; the native backend works on the runner
+          if [ "$RUNNER_OS" = "Windows" ]; then export QT_QPA_PLATFORM=windows; fi
           if [ "$RUNNER_OS" = "Windows" ]; then PY="$LOCALAPPDATA/claude-usage-widget/venv/Scripts/python.exe";
           elif [ "$RUNNER_OS" = "macOS" ]; then PY="$HOME/Library/Application Support/claude-usage-widget/venv/bin/python";
           else PY="$HOME/.local/share/claude-usage-widget/venv/bin/python"; fi
