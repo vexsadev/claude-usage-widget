@@ -85,8 +85,9 @@ def set_autostart(enabled):
     cmd = launch_command()
     if IS_WINDOWS:
         import winreg
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                            r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE) as k:
+        # CreateKeyEx also opens the key when it exists (it can be missing on fresh accounts)
+        with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER,
+                                r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE) as k:
             if enabled:
                 winreg.SetValueEx(k, AUTOSTART_NAME, 0, winreg.REG_SZ, subprocess.list2cmdline(cmd))
             else:
