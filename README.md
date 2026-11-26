@@ -328,16 +328,9 @@ Prices are in the `PRICES` table at the top of [`src/claude_usage_widget/usage.p
 
 ## ⚙️ How it works
 
-```mermaid
-flowchart LR
-    CC["Claude Code"] -- "after each turn:<br/>JSON on stdin" --> HOOK["status line hook"]
-    HOOK --> RL[("rate_limits.json")]
-    CC -- "writes" --> LOGS[("~/.claude/projects/**/*.jsonl")]
-    RL --> W["🪟 widget"]
-    RL --> T["🗂️ tray icon"]
-    RL --> G["🐧 GNOME pills"]
-    LOGS -- "new lines every 2 s" --> W
-```
+<p align="center">
+  <img src="docs/how-it-works.svg" alt="Data flow: Claude Code sends plan limits to the status line hook, which saves rate_limits.json for the top-bar pills, tray icon, alerts and widget; Claude Code also writes session logs that the widget reads every 2 seconds for tokens and cost" width="100%">
+</p>
 
 - **Plan limits:** Claude Code passes JSON to its [status line command](https://docs.claude.com/en/docs/claude-code/statusline) after each turn, and that JSON includes `rate_limits.five_hour` and `rate_limits.seven_day` (`used_percentage`, `resets_at`). The installer registers a small hook as your status line, and the hook saves those values to a file.
 - **Tokens and cost:** Claude Code saves each session as a JSONL file. The widget reads only the new lines, counts each request's `usage` block once, and prices it by model.
@@ -364,11 +357,12 @@ python -m unittest discover -s tests -v             # unit tests (no display nee
 QT_QPA_PLATFORM=offscreen claude-usage-widget --screenshot shot.png   # render with demo data
 ```
 
-To regenerate the README images (`docs/widget.png`, `docs/demo.gif`, `docs/tray.png`) from the real drawing code:
+To regenerate the README images (`docs/widget.png`, `docs/demo.gif`, `docs/tray.png`) from the real drawing code, and the animated diagram:
 
 ```bash
 pip install pillow
 QT_QPA_PLATFORM=offscreen python docs/make_media.py
+python docs/make_diagram.py docs/how-it-works.svg
 ```
 
 CI runs the unit tests, the real installer, a headless render, a status line check and the uninstaller on **Windows, macOS and Linux** (Python 3.9 and 3.13; 3.10 and 3.13 on Linux) for every push.
@@ -385,7 +379,7 @@ src/claude_usage_widget/
   paths.py       per-OS file locations
 gnome-extension/claude-usage@local/   optional GNOME top-bar pills
 install.py     cross-platform installer and uninstaller (standard library only)
-docs/          README images and the script that renders them
+docs/          README images and the scripts that render them
 ```
 </details>
 
