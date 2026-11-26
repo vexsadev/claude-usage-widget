@@ -72,7 +72,7 @@
   <tr>
     <td valign="top">
       <h3>🗂️ Tray icon</h3>
-      Two tiny bars (5-hour and weekly) in the tray or menu bar. Hover for details, click to show or hide the widget.
+      Two stacked number pills (5-hour on top, weekly below) in the tray or menu bar, colored like the limits. Hover for reset times, click to show or hide the widget.
     </td>
     <td valign="top">
       <h3>🐧 GNOME top bar</h3>
@@ -93,8 +93,8 @@
 </p>
 
 <p align="center">
-  <img src="docs/tray.png" alt="Tray icons: green under 80%, amber from 80%, red from 90%" width="450"><br>
-  <sub>Tray / menu-bar icon: the left bar is the 5-hour limit, the right bar is weekly</sub>
+  <img src="docs/tray.png" alt="Tray icons with percentage pills: green under 80%, amber from 80%, red from 90%" width="450"><br>
+  <sub>Tray / menu-bar icon: the top pill is the 5-hour limit, the bottom pill is weekly</sub>
 </p>
 
 | Used | Color | Extra |

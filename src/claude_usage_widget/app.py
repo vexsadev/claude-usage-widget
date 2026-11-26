@@ -45,34 +45,55 @@ def font(px, bold=False):
 
 # ---------- tray icon ----------
 
+TRAY_SIZES = (16, 20, 22, 24, 32, 48, 64)
+
+
 def tray_pixmap(limits, size=64):
-    """Square tray icon: two rounded bars (5-hour left, weekly right) filled to % used."""
+    """Square tray icon: two stacked number pills, 5-hour on top and weekly below.
+
+    Same style as the GNOME top-bar pills: dark glass, colored border, colored number.
+    """
     pm = QPixmap(size, size)
     pm.fill(Qt.transparent)
     p = QPainter(pm)
     p.setRenderHint(QPainter.Antialiasing)
-    gap = size * 0.12
-    bw = (size - 3 * gap) / 2
+    p.setRenderHint(QPainter.TextAntialiasing)
+    gap = max(1.0, size * 0.06)
+    ph = (size - gap) / 2
+    small = size <= 24
+    border = 1.0 if small else size * 0.045
     for i, (key, _s, _n) in enumerate(LIMITS):
         pct, _reset = limits.get(key, (None, None))
-        x = gap + i * (bw + gap)
-        rect = QRectF(x, gap * 0.5, bw, size - gap)
         c = status_color(pct)
-        track = QPainterPath()
-        track.addRoundedRect(rect, bw * 0.3, bw * 0.3)
-        p.fillPath(track, QColor(c.red(), c.green(), c.blue(), 45))
-        if pct:
-            h = rect.height() * min(100.0, pct) / 100.0
-            p.save()
-            p.setClipPath(track)
-            p.fillRect(QRectF(rect.x(), rect.bottom() - h, rect.width(), h), c)
-            p.restore()
-        edge = QColor(c)
-        edge.setAlpha(170)
-        p.setPen(QPen(edge, max(1.0, size * 0.022)))
-        p.drawPath(track)
+        rect = QRectF(border / 2, i * (ph + gap) + border / 2, size - border, ph - border)
+        pill = QPainterPath()
+        pill.addRoundedRect(rect, rect.height() / 2, rect.height() / 2)
+        fill = QColor(c.red() // 5 + 14, c.green() // 5 + 16, c.blue() // 5 + 20, 240)
+        if pct is not None and pct >= 95:  # ⚠ doesn't fit; a brighter fill flags it instead
+            fill = QColor(c.red() // 3 + 10, c.green() // 3 + 10, c.blue() // 3 + 12, 250)
+        p.fillPath(pill, fill)
+        p.setPen(QPen(c, border))
+        p.drawPath(pill)
+        text = "–" if pct is None else str(min(999, int(round(pct))))
+        f = font(max(6, int(rect.height() * (0.95 if small else 0.8))), bold=True)
+        p.setFont(f)
+        room = rect.width() - rect.height() * (0.2 if small else 0.45)
+        w = p.fontMetrics().horizontalAdvance(text)
+        if w > room:
+            f.setPixelSize(max(5, int(f.pixelSize() * room / w)))
+            p.setFont(f)
+        p.setPen(QColor(min(255, c.red() + 40), min(255, c.green() + 40), min(255, c.blue() + 40)))
+        p.drawText(rect, Qt.AlignCenter, text)
     p.end()
     return pm
+
+
+def tray_icon(limits):
+    """Icon with a pixmap drawn for each common tray size, so the numbers stay sharp."""
+    icon = QIcon()
+    for s in TRAY_SIZES:
+        icon.addPixmap(tray_pixmap(limits, s))
+    return icon
 
 
 # ---------- widget ----------
@@ -102,7 +123,7 @@ class Widget(QWidget):
             self.tray = QSystemTrayIcon(self)
             self.tray.setContextMenu(self.build_menu(tray=True))
             self.tray.activated.connect(self._tray_activated)
-            self.tray.setIcon(QIcon(tray_pixmap({})))
+            self.tray.setIcon(tray_icon({}))
             self.tray.show()
 
         self._save_timer = QTimer(self, singleShot=True, interval=600, timeout=self._save_conf)
@@ -254,7 +275,7 @@ class Widget(QWidget):
     def _update_tray(self):
         if not self.tray:
             return
-        self.tray.setIcon(QIcon(tray_pixmap(self.limits)))
+        self.tray.setIcon(tray_icon(self.limits))
         now = time.time()
         lines = []
         for key, short, name in LIMITS:

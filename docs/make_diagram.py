@@ -93,10 +93,10 @@ node(320, 336, 500, 84, "Session logs", ["~/.claude/projects/**/*.jsonl  ·  tok
 
 pill = (f'<g transform="translate(130 40)"><rect width="86" height="22" rx="11" fill="#26423a" stroke="{MINT}" stroke-opacity=".55"/>'
         f'<text x="43" y="15.5" text-anchor="middle" style="font-size:11px;font-weight:700;fill:#a3e8cb">34% 5h · 3h</text></g>')
-tray = (f'<g transform="translate(176 14)"><rect width="13" height="34" rx="4" fill="{MINT}" fill-opacity=".18" stroke="{MINT}" stroke-opacity=".7"/>'
-        f'<rect y="20" width="13" height="14" rx="4" fill="{MINT}"/>'
-        f'<rect x="19" width="13" height="34" rx="4" fill="{AMBER}" fill-opacity=".18" stroke="{AMBER}" stroke-opacity=".7"/>'
-        f'<rect x="19" y="5" width="13" height="29" rx="4" fill="{AMBER}"/></g>')
+tray = (f'<g transform="translate(166 12)"><rect width="46" height="21" rx="10.5" fill="#1e3a31" stroke="{MINT}" stroke-width="2"/>'
+        f'<text x="23" y="15.5" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#7ef0c2">34</text>'
+        f'<rect y="25" width="46" height="21" rx="10.5" fill="#3d3520" stroke="{AMBER}" stroke-width="2"/>'
+        f'<text x="23" y="40.5" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#ffe08f">82</text></g>')
 bell = (f'<g transform="translate(178 16)"><path d="M14 2 C 6 2 5 9 5 14 L 5 21 L 1 26 L 27 26 L 23 21 L 23 14 C 23 9 22 2 14 2 Z" fill="{AMBER}" fill-opacity=".9"/>'
         f'<circle cx="14" cy="30" r="3.5" fill="{AMBER}"/>'
         f'<animateTransform attributeName="transform" type="rotate" additive="sum" values="0 14 4;0 14 4;-14 14 4;12 14 4;-8 14 4;0 14 4;0 14 4" keyTimes="0;0.62;0.66;0.7;0.74;0.78;1" dur="{CYCLE}" repeatCount="indefinite"/></g>')
@@ -104,7 +104,7 @@ bars = (f'<g transform="translate(20 52)"><rect width="190" height="6" rx="3" fi
         f'<rect width="65" height="6" rx="3" fill="{MINT}"/>'
         f'<rect y="12" width="190" height="6" rx="3" fill="#fff" fill-opacity=".08"/><rect y="12" width="156" height="6" rx="3" fill="{AMBER}"/></g>')
 node(930, 60, 230, 72, "Top-bar pills", ["GNOME, optional"], MINT, flash=(0.62, 0.8), extra=pill)
-node(930, 160, 230, 72, "Tray icon", ["5h + weekly bars"], MINT, flash=(0.62, 0.8), extra=tray)
+node(930, 160, 230, 72, "Tray icon", ["5h + weekly pills"], MINT, flash=(0.62, 0.8), extra=tray)
 node(930, 260, 230, 72, "Desktop alerts", ["at 80% and 90%"], AMBER, flash=(0.62, 0.8), extra=bell)
 node(930, 352, 230, 84, "Widget", [], MINT, flash=(0.62, 0.86), extra=bars)
 

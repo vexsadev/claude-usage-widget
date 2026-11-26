@@ -101,7 +101,7 @@ def demo_gif(widget):
 
 def tray_strip():
     """Tray icons at three levels on a dark top-bar strip, with captions."""
-    states = [((34, 21), "under 80%"), ((86, 58), "80% and up"), ((96, 91), "90% and up")]
+    states = [((34, 21), "under 80%"), ((86, 58), "80% and up"), ((93, 91), "90% and up")]
     cell, icon, h = 150, 64, 132
     w = cell * len(states)
     img = QImage(w * SCALE, h * SCALE, QImage.Format_ARGB32)
