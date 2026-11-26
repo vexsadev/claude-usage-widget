@@ -243,7 +243,7 @@ python -m unittest discover -s tests -v             # unit tests (no display nee
 QT_QPA_PLATFORM=offscreen claude-usage-widget --screenshot shot.png   # render with demo data
 ```
 
-CI runs the unit tests, the real installer, a headless render, a status line check and the uninstaller on **Windows, macOS and Linux** (Python 3.9 and 3.13) for every push.
+CI runs the unit tests, the real installer, a headless render, a status line check and the uninstaller on **Windows, macOS and Linux** (Python 3.9 and 3.13; 3.10 and 3.13 on Linux) for every push.
 
 Project layout:
 
