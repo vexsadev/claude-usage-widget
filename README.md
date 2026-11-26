@@ -191,7 +191,7 @@ This stops the widget, removes start at login, the Start menu or app-menu entry 
 The installer keeps it. Claude Code runs the widget's hook first, and the hook then runs your original command, so your terminal still shows your own status line. Uninstalling puts it back.
 
 **The widget doesn't stay on top or follow me between desktops (Linux).**
-Make sure the X11 libraries from the Linux install steps are installed, then run the installer again. Some tiling window managers ignore always-on-top requests; add a floating or sticky rule for the window class `claude-usage-widget` in that case.
+Make sure the X11 libraries from the Linux install steps are installed, then run the installer again. Some tiling window managers ignore always-on-top requests. In that case, add a floating or sticky rule for the widget window; run `xprop WM_CLASS` and click the widget to find its window class.
 
 **`qt.qpa.plugin: Could not load the Qt platform plugin "xcb"` (Linux).**
 Install the libraries listed in the Linux install steps.
