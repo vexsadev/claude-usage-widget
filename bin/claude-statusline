@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+"""Claude Code status line: saves the session JSON for claude-token-widget and prints a short line."""
+import json
+import os
+import sys
+import time
+
+CACHE = os.path.expanduser("~/.cache/claude-token-widget")
+
+raw = sys.stdin.read()
+try:
+    d = json.loads(raw)
+except Exception:
+    d = {}
+
+os.makedirs(CACHE, exist_ok=True)
+d["_saved_at"] = time.time()
+tmp = os.path.join(CACHE, "statusline.json.tmp")
+with open(tmp, "w") as f:
+    json.dump(d, f)
+os.replace(tmp, os.path.join(CACHE, "statusline.json"))
+if d.get("rate_limits"):
+    with open(tmp, "w") as f:
+        json.dump({"rate_limits": d["rate_limits"], "_saved_at": d["_saved_at"]}, f)
+    os.replace(tmp, os.path.join(CACHE, "rate_limits.json"))
+
+
+def pct(v):
+    if not isinstance(v, dict):
+        return None
+    for k in ("used_percentage", "utilization", "percent_used"):
+        if isinstance(v.get(k), (int, float)):
+            return v[k]
+    return None
+
+
+parts = [(d.get("model") or {}).get("display_name", "Claude")]
+rl = d.get("rate_limits") or {}
+for key, label in (("five_hour", "5h"), ("seven_day", "wk")):
+    p = pct(rl.get(key))
+    if p is not None:
+        parts.append(f"{label} {p:.0f}%")
+print(" · ".join(parts))
