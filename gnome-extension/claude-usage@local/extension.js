@@ -1,5 +1,5 @@
 // Claude Usage — colored 5-hour / weekly limit pills in the GNOME top bar.
-// Reads ~/.cache/claude-token-widget/rate_limits.json (written by ~/.local/bin/claude-statusline).
+// Reads $XDG_DATA_HOME/claude-usage-widget/rate_limits.json (written by the Claude Code status line hook).
 // Green < 80%, yellow 80–89%, red >= 90%, warning sign at >= 95%.
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
@@ -11,9 +11,8 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-const RATE_FILE = GLib.build_filenamev([GLib.get_home_dir(), '.cache', 'claude-token-widget', 'rate_limits.json']);
-const WIDGET_BIN = GLib.build_filenamev([GLib.get_home_dir(), '.local', 'bin', 'claude-token-widget']);
-const APP_ID = 'local.claude.usage_widget';
+const RATE_FILE = GLib.build_filenamev([GLib.get_user_data_dir(), 'claude-usage-widget', 'rate_limits.json']);
+const WIDGET_BIN = GLib.build_filenamev([GLib.get_home_dir(), '.local', 'bin', 'claude-usage-widget']);
 const LIMITS = [
     {key: 'five_hour', short: '5h', name: '5-hour'},
     {key: 'seven_day', short: 'wk', name: 'Weekly'},
@@ -75,9 +74,8 @@ export default class ClaudeUsageExtension extends Extension {
 
         const toggle = new PopupMenu.PopupMenuItem('Show / hide widget');
         toggle.connect('activate', () => {
-            // toggles the running widget; starts it if it is not running
-            if (!spawn(['gapplication', 'action', APP_ID, 'toggle']))
-                spawn([WIDGET_BIN]);
+            // toggles the running widget (starts it if it is not running)
+            spawn([WIDGET_BIN, '--toggle']);
         });
         this._button.menu.addMenuItem(toggle);
         this._button.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());

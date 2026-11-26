@@ -1,7 +1,7 @@
 {
   "uuid": "claude-usage@local",
   "name": "Claude Usage",
-  "description": "Colored 5-hour and weekly Claude plan limit pills in the top bar (data from claude-token-widget).",
+  "description": "Colored 5-hour and weekly Claude plan limit pills in the top bar. Companion to claude-usage-widget.",
   "shell-version": ["45", "46", "47", "48", "49", "50"],
-  "version": 1
+  "version": 2
 }

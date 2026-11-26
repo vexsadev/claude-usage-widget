@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude-usage-widget"
+version = "2.0.0"
+description = "Always-on-top desktop widget for live Claude Code usage: 5-hour and weekly plan limits, per-model tokens and cost"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+dependencies = [
+    "PySide6-Essentials>=6.5",
+    "pyobjc-framework-Cocoa>=9; sys_platform == 'darwin'",
+]
+
+[project.gui-scripts]
+claude-usage-widget = "claude_usage_widget.__main__:main"
+
+[project.scripts]
+claude-usage-statusline = "claude_usage_widget.statusline:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
