@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="64" viewBox="0 0 900 64" role="img" aria-label="GNOME top bar with colored Claude usage pills: 5-hour and weekly limits with reset countdowns">
+  <defs>
+    <style>
+      text { font-family: Cantarell, Ubuntu, "Segoe UI", "Noto Sans", "Helvetica Neue", Arial, sans-serif; font-size: 15px; font-weight: 700; }
+      .bar { font-weight: 700; fill: #f3f3f3; }
+    </style>
+  </defs>
+  <rect width="900" height="64" rx="14" fill="#0b0b0d"/>
+  <text x="26" y="38" class="bar">Activities</text>
+  <text x="450" y="38" text-anchor="middle" class="bar">Thu 26 Nov  10:42</text>
+
+  <!-- 5-hour pill: cycles green -> amber -> red -->
+  <g transform="translate(560 17)">
+    <g>
+      <rect width="148" height="30" rx="15" fill="#26423a" fill-opacity="0.95" stroke="#4ad49e" stroke-opacity="0.55"/>
+      <text x="74" y="20" text-anchor="middle" fill="#a3e8cb">34% 5h · 3h 11m</text>
+      <animate attributeName="opacity" calcMode="discrete" values="1;0;1" keyTimes="0;0.34;1" dur="9s" repeatCount="indefinite"/>
+    </g>
+    <g opacity="0">
+      <rect width="148" height="30" rx="15" fill="#463c24" fill-opacity="0.95" stroke="#fac754" stroke-opacity="0.55"/>
+      <text x="74" y="20" text-anchor="middle" fill="#fcdfa0">84% 5h · 1h 52m</text>
+      <animate attributeName="opacity" calcMode="discrete" values="0;1;0" keyTimes="0;0.34;0.67" dur="9s" repeatCount="indefinite"/>
+    </g>
+    <g opacity="0">
+      <rect width="148" height="30" rx="15" fill="#48262a" fill-opacity="0.95" stroke="#f77078" stroke-opacity="0.55"/>
+      <text x="74" y="20" text-anchor="middle" fill="#fab6ba">⚠ 96% 5h · 48m</text>
+      <animate attributeName="opacity" calcMode="discrete" values="0;1" keyTimes="0;0.67" dur="9s" repeatCount="indefinite"/>
+    </g>
+  </g>
+
+  <!-- weekly pill -->
+  <g transform="translate(716 17)">
+    <rect width="140" height="30" rx="15" fill="#26423a" fill-opacity="0.95" stroke="#4ad49e" stroke-opacity="0.55"/>
+    <text x="70" y="20" text-anchor="middle" fill="#a3e8cb">41% wk · 4d 2h</text>
+  </g>
+
+</svg>

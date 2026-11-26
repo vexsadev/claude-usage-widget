@@ -1,51 +1,126 @@
-# Claude Usage Widget
+<a id="top"></a>
 
-**See your Claude Code usage live, without typing `/usage`.** A small widget that floats above your other windows on Windows, macOS and Linux. It shows:
+<p align="center">
+  <img src="docs/banner.svg" alt="Claude Usage Widget: your Claude Code plan limits, tokens and cost, always on your desktop" width="100%">
+</p>
 
-- your **5-hour** and **weekly** plan limits, with countdowns to when they reset
-- the tokens **each model** has used today, plus what that would cost at API prices
-- **desktop alerts** at 80% and 90% of each limit
+<p align="center">
+  <a href="https://github.com/vexsadev/claude-usage-widget/actions/workflows/ci.yml"><img src="https://github.com/vexsadev/claude-usage-widget/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white" alt="Windows">
+  <img src="https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white" alt="macOS">
+  <img src="https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black" alt="Linux">
+  <img src="https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white" alt="Python 3.9+">
+  <img src="https://img.shields.io/badge/Qt-PySide6-41CD52?logo=qt&logoColor=white" alt="PySide6">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+</p>
 
-![Claude Usage Widget](docs/widget.png)
+<p align="center">
+  <b>See your Claude Code usage live, without typing <code>/usage</code>.</b><br>
+  A small widget that floats above your windows and turns green → amber → red as you approach your plan limits.
+</p>
 
-[![CI](https://github.com/vexsadev/claude-usage-widget/actions/workflows/ci.yml/badge.svg)](https://github.com/vexsadev/claude-usage-widget/actions/workflows/ci.yml)
+<p align="center">
+  <a href="#-quick-start">Quick start</a> ·
+  <a href="#-install-on-windows">Windows</a> ·
+  <a href="#-install-on-macos">macOS</a> ·
+  <a href="#-install-on-linux">Linux</a> ·
+  <a href="#%EF%B8%8F-using-the-widget">Usage</a> ·
+  <a href="#-troubleshooting">Troubleshooting</a> ·
+  <a href="#%EF%B8%8F-how-it-works">How it works</a>
+</p>
 
+<p align="center">
+  <img src="docs/demo.gif" alt="The widget as usage climbs: the 5-hour bar goes from green to amber at 80% and red with a warning sign at 95%" width="440">
+</p>
+
+> [!NOTE]
 > This is an unofficial community tool, not made or endorsed by Anthropic. "Claude" is a trademark of Anthropic.
 
 ---
 
-## Contents
+## ✨ Features
 
-- [Features](#features)
-- [Requirements](#requirements)
-- [Install on Windows](#install-on-windows)
-- [Install on macOS](#install-on-macos)
-- [Install on Linux](#install-on-linux)
-- [Using the widget](#using-the-widget)
-- [Updating](#updating)
-- [Uninstalling](#uninstalling)
-- [Troubleshooting](#troubleshooting)
-- [How it works](#how-it-works)
-- [Privacy](#privacy)
-- [Development](#development)
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>📊 Plan limits</h3>
+      Your <b>5-hour</b> and <b>weekly</b> limits, the same numbers as Claude Code's <code>/usage</code>, with a countdown to each reset.
+    </td>
+    <td width="33%" valign="top">
+      <h3>🚦 Traffic-light colors</h3>
+      <b>Green</b> under 80%, <b>amber</b> from 80%, <b>red</b> from 90%, and a ⚠ sign from 95%. Used everywhere: widget, tray and top bar.
+    </td>
+    <td width="33%" valign="top">
+      <h3>🔔 Desktop alerts</h3>
+      A notification at <b>80%</b> and an urgent one at <b>90%</b> of each limit, once per limit period.
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>🧠 Per-model tokens</h3>
+      Today's tokens and cost for each model (Opus, Sonnet, Haiku…). A dot lights up while a model is working.
+    </td>
+    <td valign="top">
+      <h3>💵 Today's cost</h3>
+      What today's usage would cost at Claude API list prices, with cache reads and writes priced at their own rates.
+    </td>
+    <td valign="top">
+      <h3>📌 Always visible</h3>
+      Stays on top, follows you across desktops and Spaces, drags anywhere, remembers its spot, and can be made more see-through.
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>🗂️ Tray icon</h3>
+      Two tiny bars (5-hour and weekly) in the tray or menu bar. Hover for details, click to show or hide the widget.
+    </td>
+    <td valign="top">
+      <h3>🐧 GNOME top bar</h3>
+      Optional colored pills like <code>34% 5h · 3h 11m</code> right in the GNOME top bar.
+    </td>
+    <td valign="top">
+      <h3>🔒 Private</h3>
+      Runs entirely on your computer. No network requests, no login or API keys read. Starts at login.
+    </td>
+  </tr>
+</table>
+
+### 🎨 Colors at a glance
+
+<p align="center">
+  <img src="docs/pills.svg" alt="GNOME top-bar pills: the 5-hour pill cycles green, amber and red" width="720"><br>
+  <sub>GNOME top-bar pills (Linux, optional)</sub>
+</p>
+
+<p align="center">
+  <img src="docs/tray.png" alt="Tray icons: green under 80%, amber from 80%, red from 90%" width="450"><br>
+  <sub>Tray / menu-bar icon: the left bar is the 5-hour limit, the right bar is weekly</sub>
+</p>
+
+| Used | Color | Extra |
+|:---:|:---:|---|
+| under 80% | 🟢 green | |
+| 80 – 89% | 🟡 amber | desktop notification |
+| 90% and up | 🔴 red | urgent notification |
+| 95% and up | 🔴 red | ⚠ sign next to the number |
 
 ---
 
-## Features
+## 🚀 Quick start
 
-| | |
-|---|---|
-| **Plan limits** | 5-hour and weekly bars, the same numbers as Claude Code's `/usage`, with a countdown to each reset. |
-| **Colors** | **Green** under 80%, **amber** from 80% to 89%, **red** from 90%, and a ⚠ sign from 95%. |
-| **Per-model usage** | Today's tokens and cost for each model, such as Opus, Sonnet and Haiku. A dot lights up while a model is in use. |
-| **Today's cost** | What today's usage would cost at Claude API list prices, with cache tokens counted at their own rates. |
-| **Alerts** | A desktop notification at 80% and an urgent one at 90% of each limit, sent once per limit period. |
-| **Always visible** | Stays above other windows, shows on every desktop or Space, can be dragged anywhere and remembers its position. |
-| **Tray icon** | Two small bars (5-hour and weekly) in the system tray or menu bar. Hover over them for details, or click to show or hide the widget. |
-| **GNOME top bar** *(Linux, optional)* | Colored pills such as `34% 5h · 3h 11m` and `82% wk · 2d 4h`, drawn right in the top bar. |
-| **Start at login** | On by default. You can turn it off from the right-click menu. |
+You need **[Claude Code](https://docs.claude.com/en/docs/claude-code/overview)** and **Python 3.9+**. Then:
 
-## Requirements
+```bash
+git clone https://github.com/vexsadev/claude-usage-widget.git
+cd claude-usage-widget
+python3 install.py        # Windows: py install.py
+```
+
+Open Claude Code (`claude`), send any message, and the limit bars fill in. That's it.
+
+New to the terminal? Follow the step-by-step guide for your system below. 👇
+
+## 📋 Requirements
 
 1. **[Claude Code](https://docs.claude.com/en/docs/claude-code/overview)** installed and signed in.
    - The **plan limits** (5-hour and weekly) only appear if you sign in with a **Claude subscription (Pro or Max)**. If you use Claude Code with an API key, you'll still see tokens and cost, but no limit bars.
@@ -54,7 +129,7 @@
 
 ---
 
-## Install on Windows
+## 🪟 Install on Windows
 
 **1. Install Python** (skip this if `py --version` already shows 3.9 or newer).
 - Download it from <https://www.python.org/downloads/windows/> and run the installer.
@@ -63,7 +138,7 @@
 
 **2. Download this project.**
 - **With Git:** run `git clone https://github.com/vexsadev/claude-usage-widget.git` in PowerShell.
-- **Without Git:** click the green **Code** button above, choose **Download ZIP**, and extract it, for example to `Downloads\claude-usage-widget`.
+- **Without Git:** click the green **Code** button at the top of this page, choose **Download ZIP**, and extract it, for example to `Downloads\claude-usage-widget`.
 
 **3. Run the installer.** Open **PowerShell** in the project folder (in File Explorer, open the folder, type `powershell` in the address bar and press Enter), then run:
 
@@ -73,9 +148,9 @@ py install.py
 
 **4. Start a Claude Code session** (`claude`) and send any message. The limit bars fill in after the first reply.
 
-The widget appears in the top-right corner of your screen. Its tray icon is in the bottom-right of the taskbar; if you don't see it, click **^** to show hidden icons, and drag the icon onto the taskbar to keep it there. You'll also find **Claude Usage Widget** in the Start menu.
+✅ The widget appears in the top-right corner of your screen. Its tray icon is in the bottom-right of the taskbar; if you don't see it, click **^** to show hidden icons, and drag the icon onto the taskbar to keep it there. You'll also find **Claude Usage Widget** in the Start menu.
 
-## Install on macOS
+## 🍎 Install on macOS
 
 **1. Get Python 3 and Git.** Either one works:
 - **Apple's developer tools** (simplest): run `xcode-select --install` in Terminal and click **Install**. This provides both `python3` and `git`.
@@ -91,29 +166,39 @@ python3 install.py
 
 **3. Start a Claude Code session** (`claude`) and send any message so the limits appear.
 
-The widget appears in the top-right corner and shows on every Space. Its icon is in the **menu bar**; click it for the menu. It doesn't add a Dock icon.
+✅ The widget appears in the top-right corner and shows on every Space. Its icon is in the **menu bar**; click it for the menu. It doesn't add a Dock icon.
 
+> [!TIP]
 > **Notifications:** the first alert comes from *Script Editor*. If macOS asks, click **Allow**. If you don't see alerts, check **System Settings → Notifications → Script Editor**.
 
-## Install on Linux
+## 🐧 Install on Linux
 
 **1. Install the system packages.**
 
-*Ubuntu / Debian:*
+<details open>
+<summary><b>Ubuntu / Debian</b></summary>
+
 ```bash
 sudo apt install -y git python3 python3-venv libnotify-bin \
   libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xkb1
 ```
+</details>
 
-*Fedora:*
+<details>
+<summary><b>Fedora</b></summary>
+
 ```bash
 sudo dnf install -y git python3 libnotify xcb-util-cursor xcb-util-wm xcb-util-image xcb-util-keysyms xcb-util-renderutil libxkbcommon-x11
 ```
+</details>
 
-*Arch:*
+<details>
+<summary><b>Arch</b></summary>
+
 ```bash
 sudo pacman -S --needed git python libnotify xcb-util-cursor xcb-util-wm xcb-util-image xcb-util-keysyms xcb-util-renderutil libxkbcommon-x11
 ```
+</details>
 
 **2. Download this project and run the installer:**
 
@@ -127,14 +212,17 @@ python3 install.py
 
 **4. Start a Claude Code session** (`claude`) and send any message so the limits appear.
 
-**Notes:**
+<details>
+<summary><b>Linux notes: tray icons, other desktops, Wayland</b></summary>
+
 - **Tray icon on GNOME:** GNOME needs an AppIndicator extension to show tray icons. Ubuntu includes one. On Fedora and other distributions, install [AppIndicator and KStatusNotifierItem Support](https://extensions.gnome.org/extension/615/appindicator-support/). Or rely on the top-bar pills; while they're running, the widget hides its own tray icon.
 - **KDE, Xfce, Cinnamon** and other desktops show the tray icon out of the box.
 - **Wayland:** Wayland doesn't let apps keep their own windows on top, so the widget runs through XWayland (X11 compatibility), where always-on-top works. That's why the X11 (`xcb`) libraries above are needed.
+</details>
 
 ---
 
-## Using the widget
+## 🖱️ Using the widget
 
 | To... | Do this |
 |---|---|
@@ -155,11 +243,15 @@ Running it again while it's already running just shows it. Add `--toggle` to sho
 
 ### What the numbers mean
 
+<p align="center">
+  <img src="docs/widget.png" alt="The widget: 5-hour 34%, weekly 82%, today about $10.6, and tokens per model" width="360">
+</p>
+
 - **5-hour / Weekly:** the percentage of your plan's limit used so far, the same numbers `/usage` shows, and when that limit resets.
 - **Today ≈ $X:** what today's Claude Code usage *would* cost at Claude API list prices. **If you're on a subscription, you aren't charged this amount.** It's a guide to how heavy your usage is. It usually comes out a few percent lower than Claude Code's own figure, because some small background requests aren't saved to the session logs. If the total starts with "≥", a model you used isn't in the price list, so the real figure is higher.
 - **Model rows:** today's total tokens (input, output and cache) and cost for each model. A highlighted dot means that model was used in the last 2 minutes.
 
-## Updating
+## 🔄 Updating
 
 ```bash
 cd claude-usage-widget
@@ -169,7 +261,7 @@ python3 install.py        # Windows: py install.py
 
 Your settings (position, opacity, start at login) are kept.
 
-## Uninstalling
+## 🗑️ Uninstalling
 
 ```bash
 cd claude-usage-widget
@@ -180,42 +272,71 @@ This stops the widget, removes start at login, the Start menu or app-menu entry 
 
 ---
 
-## Troubleshooting
+## 🩺 Troubleshooting
 
-**The limit bars say "waiting for Claude Code".**
+<details>
+<summary><b>The limit bars say "waiting for Claude Code".</b></summary>
+
 - The limits come from Claude Code itself. Run `claude`, send a message, and wait for the reply. They only update while a Claude Code session is open.
 - Your Claude Code setting must still point at the widget. Open `~/.claude/settings.json` and check that `statusLine.command` contains `claude_usage_widget.statusline`. Running the installer again fixes it.
 - Plan limits are only provided for Claude subscription logins (Pro or Max), not for API-key usage.
+</details>
 
-**I already had a custom status line.**
+<details>
+<summary><b>I already had a custom status line.</b></summary>
+
 The installer keeps it. Claude Code runs the widget's hook first, and the hook then runs your original command, so your terminal still shows your own status line. Uninstalling puts it back.
+</details>
 
-**The widget doesn't stay on top or follow me between desktops (Linux).**
+<details>
+<summary><b>The widget doesn't stay on top or follow me between desktops (Linux).</b></summary>
+
 Make sure the X11 libraries from the Linux install steps are installed, then run the installer again. Some tiling window managers ignore always-on-top requests. In that case, add a floating or sticky rule for the widget window; run `xprop WM_CLASS` and click the widget to find its window class.
+</details>
 
-**`qt.qpa.plugin: Could not load the Qt platform plugin "xcb"` (Linux).**
+<details>
+<summary><b><code>qt.qpa.plugin: Could not load the Qt platform plugin "xcb"</code> (Linux).</b></summary>
+
 Install the libraries listed in the Linux install steps.
+</details>
 
-**No tray icon on GNOME.**
+<details>
+<summary><b>No tray icon on GNOME.</b></summary>
+
 See the Linux notes above. You need an AppIndicator extension or the included top-bar extension, and you need to log out and back in after installing.
+</details>
 
-**`py` or `python3` is not recognized (Windows).**
+<details>
+<summary><b><code>py</code> or <code>python3</code> is not recognized (Windows).</b></summary>
+
 Reinstall Python and tick **Add python.exe to PATH**, or run it with its full path, for example `C:\Users\<you>\AppData\Local\Programs\Python\Python313\python.exe install.py`.
+</details>
 
-**I use a custom Claude config folder.**
+<details>
+<summary><b>I use a custom Claude config folder.</b></summary>
+
 If you set `CLAUDE_CONFIG_DIR`, make sure it's also set when the widget starts at login. The widget looks for logs in `$CLAUDE_CONFIG_DIR/projects`.
+</details>
 
-**Prices look wrong.**
+<details>
+<summary><b>Prices look wrong.</b></summary>
+
 Prices are in the `PRICES` table at the top of [`src/claude_usage_widget/usage.py`](src/claude_usage_widget/usage.py). Pull requests are welcome when Anthropic changes them.
+</details>
 
 ---
 
-## How it works
+## ⚙️ How it works
 
-```
-Claude Code ──(after each turn, JSON on stdin)──▶ status line hook ──▶ rate_limits.json ─┐
-     │                                                                                     ├─▶ widget, tray icon, GNOME pills
-     └──(writes)──▶ ~/.claude/projects/**/*.jsonl ──(widget reads new lines every 2 s)──────┘
+```mermaid
+flowchart LR
+    CC["Claude Code"] -- "after each turn:<br/>JSON on stdin" --> HOOK["status line hook"]
+    HOOK --> RL[("rate_limits.json")]
+    CC -- "writes" --> LOGS[("~/.claude/projects/**/*.jsonl")]
+    RL --> W["🪟 widget"]
+    RL --> T["🗂️ tray icon"]
+    RL --> G["🐧 GNOME pills"]
+    LOGS -- "new lines every 2 s" --> W
 ```
 
 - **Plan limits:** Claude Code passes JSON to its [status line command](https://docs.claude.com/en/docs/claude-code/statusline) after each turn, and that JSON includes `rate_limits.five_hour` and `rate_limits.seven_day` (`used_percentage`, `resets_at`). The installer registers a small hook as your status line, and the hook saves those values to a file.
@@ -224,17 +345,17 @@ Claude Code ──(after each turn, JSON on stdin)──▶ status line hook ─
 
 ### File locations
 
-| | Windows | macOS | Linux |
+| | 🪟 Windows | 🍎 macOS | 🐧 Linux |
 |---|---|---|---|
 | App, venv, settings, data | `%LOCALAPPDATA%\claude-usage-widget` | `~/Library/Application Support/claude-usage-widget` | `~/.local/share/claude-usage-widget` |
 | Start at login | Registry `HKCU\…\Run\ClaudeUsageWidget` | `~/Library/LaunchAgents/io.github.claude-usage-widget.plist` | `~/.config/autostart/claude-usage-widget.desktop` |
 | Claude Code setting changed | `~/.claude/settings.json` → `statusLine` | same | same |
 
-## Privacy
+## 🔒 Privacy
 
 Everything runs on your own computer. The widget makes **no network requests**, never reads your Claude login or API keys, and only reads Claude Code's local session logs and the limit numbers Claude Code passes to the status line. The only network use is the one-time download of the Python packages during install.
 
-## Development
+## 🛠️ Development
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate       # Windows: .venv\Scripts\activate
@@ -243,9 +364,17 @@ python -m unittest discover -s tests -v             # unit tests (no display nee
 QT_QPA_PLATFORM=offscreen claude-usage-widget --screenshot shot.png   # render with demo data
 ```
 
+To regenerate the README images (`docs/widget.png`, `docs/demo.gif`, `docs/tray.png`) from the real drawing code:
+
+```bash
+pip install pillow
+QT_QPA_PLATFORM=offscreen python docs/make_media.py
+```
+
 CI runs the unit tests, the real installer, a headless render, a status line check and the uninstaller on **Windows, macOS and Linux** (Python 3.9 and 3.13; 3.10 and 3.13 on Linux) for every push.
 
-Project layout:
+<details>
+<summary><b>Project layout</b></summary>
 
 ```
 src/claude_usage_widget/
@@ -256,8 +385,19 @@ src/claude_usage_widget/
   paths.py       per-OS file locations
 gnome-extension/claude-usage@local/   optional GNOME top-bar pills
 install.py     cross-platform installer and uninstaller (standard library only)
+docs/          README images and the script that renders them
 ```
+</details>
 
-## License
+Contributions are welcome: open an issue or a pull request.
+
+## 📄 License
 
 [MIT](LICENSE). Free to use, modify and share.
+
+---
+
+<p align="center">
+  If this widget saves you from hitting a limit mid-task, consider giving it a ⭐<br>
+  <sub><a href="#top">Back to top ↑</a></sub>
+</p>

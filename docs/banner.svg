@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-label="Claude Usage Widget: your Claude Code plan limits, live on your desktop">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1c2740"/>
+      <stop offset="0.55" stop-color="#2a2340"/>
+      <stop offset="1" stop-color="#4a2440"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="0.15" cy="0.1" r="0.6">
+      <stop offset="0" stop-color="#d97857" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#d97857" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0.9" cy="1" r="0.6">
+      <stop offset="0" stop-color="#4ad49e" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#4ad49e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="drift">
+      <stop offset="0" stop-color="#d97857" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#d97857" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="card"><rect width="1200" height="320" rx="24"/></clipPath>
+    <style>
+      text { font-family: "Segoe UI", Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, sans-serif; }
+      .title { font-size: 58px; font-weight: 800; fill: #f1f2f6; letter-spacing: -1px; }
+      .sub { font-size: 23px; fill: #b7bdc9; }
+      .chip { font-size: 16px; font-weight: 700; fill: #e8e9ee; }
+      .lbl { font-size: 17px; font-weight: 700; fill: #eceef2; }
+      .dim { font-size: 15px; fill: #949ca8; }
+    </style>
+  </defs>
+
+  <g clip-path="url(#card)">
+    <rect width="1200" height="320" fill="url(#bg)"/>
+    <rect width="1200" height="320" fill="url(#glow1)"/>
+    <rect width="1200" height="320" fill="url(#glow2)"/>
+    <!-- slow drifting light -->
+    <circle cx="620" cy="160" r="260" fill="url(#drift)">
+      <animate attributeName="cx" values="560;700;560" dur="14s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- left: title -->
+  <g transform="translate(64 0)">
+    <circle cx="10" cy="92" r="9" fill="#d97857">
+      <animate attributeName="opacity" values="1;0.35;1" dur="1.8s" repeatCount="indefinite"/>
+    </circle>
+    <text x="30" y="99" class="dim" style="font-size:18px;font-weight:700;fill:#d9a08a">LIVE  ·  UNOFFICIAL COMMUNITY TOOL</text>
+    <text x="0" y="170" class="title">Claude Usage Widget</text>
+    <text x="0" y="212" class="sub">Your Claude Code plan limits, tokens and cost,</text>
+    <text x="0" y="242" class="sub">always on your desktop.</text>
+
+    <g transform="translate(0 270)">
+      <rect width="104" height="32" rx="16" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.18"/>
+      <text x="52" y="21" text-anchor="middle" class="chip">Windows</text>
+      <rect x="116" width="90" height="32" rx="16" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.18"/>
+      <text x="161" y="21" text-anchor="middle" class="chip">macOS</text>
+      <rect x="218" width="80" height="32" rx="16" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.18"/>
+      <text x="258" y="21" text-anchor="middle" class="chip">Linux</text>
+    </g>
+  </g>
+
+  <!-- right: mini widget with animated bars -->
+  <g transform="translate(790 58)">
+    <rect width="350" height="204" rx="18" fill="#14171c" fill-opacity="0.86" stroke="#ffffff" stroke-opacity="0.10"/>
+
+    <text x="24" y="46" class="lbl">5-hour</text>
+    <g text-anchor="end" class="lbl">
+      <text x="326" y="46" style="fill:#949ca8;font-weight:400;font-size:15px">resets 3h 11m
+        <animate attributeName="opacity" calcMode="discrete" values="1;0;1" keyTimes="0;0.44;0.94" dur="8s" repeatCount="indefinite"/>
+      </text>
+      <text x="326" y="46" style="fill:#fac754" opacity="0">86%  ·  heads up
+        <animate attributeName="opacity" calcMode="discrete" values="0;1;0" keyTimes="0;0.44;0.58" dur="8s" repeatCount="indefinite"/>
+      </text>
+      <text x="326" y="46" style="fill:#f77078" opacity="0">⚠ 96%  ·  slow down
+        <animate attributeName="opacity" calcMode="discrete" values="0;1;0" keyTimes="0;0.58;0.94" dur="8s" repeatCount="indefinite"/>
+      </text>
+    </g>
+    <rect x="24" y="60" width="302" height="12" rx="6" fill="#ffffff" fill-opacity="0.08"/>
+    <rect x="24" y="60" width="60" height="12" rx="6" fill="#4ad49e">
+      <animate attributeName="width" values="54;242;260;290;290;54" keyTimes="0;0.44;0.52;0.62;0.94;1" dur="8s" repeatCount="indefinite"/>
+      <animate attributeName="fill" calcMode="discrete" values="#4ad49e;#fac754;#f77078;#4ad49e" keyTimes="0;0.44;0.58;0.94" dur="8s" repeatCount="indefinite"/>
+    </rect>
+
+    <text x="24" y="112" class="lbl">Weekly</text>
+    <text x="326" y="112" text-anchor="end" class="dim">resets 2d 4h</text>
+    <rect x="24" y="126" width="302" height="12" rx="6" fill="#ffffff" fill-opacity="0.08"/>
+    <rect x="24" y="126" width="140" height="12" rx="6" fill="#4ad49e">
+      <animate attributeName="width" values="140;236;248;248;140" keyTimes="0;0.5;0.6;0.94;1" dur="8s" repeatCount="indefinite"/>
+      <animate attributeName="fill" calcMode="discrete" values="#4ad49e;#fac754;#4ad49e" keyTimes="0;0.5;0.94" dur="8s" repeatCount="indefinite"/>
+    </rect>
+
+    <line x1="24" y1="158" x2="326" y2="158" stroke="#ffffff" stroke-opacity="0.08"/>
+    <text x="24" y="186" class="lbl">Today</text>
+    <text x="86" y="186" class="lbl" style="fill:#d97857">≈ $10.6</text>
+    <circle cx="232" cy="181" r="4" fill="#d97857">
+      <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite"/>
+    </circle>
+    <text x="326" y="186" text-anchor="end" class="dim">Opus 5.5</text>
+  </g>
+</svg>
