@@ -1,6 +1,7 @@
 """Tests for transcript parsing, cost, limits and notifications (no Qt needed)."""
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import time
@@ -8,8 +9,9 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from claude_usage_widget import paths, system, usage  # noqa: E402
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+from claude_usage_widget import paths, statusline, system, usage  # noqa: E402
 
 
 def iso(ts):
@@ -144,6 +146,83 @@ class StatuslineSetupTests(unittest.TestCase):
         s = paths.load_json(paths.claude_settings_file())
         self.assertEqual(s["statusLine"]["command"], "my-line")
         self.assertEqual(s["theme"], "dark")
+
+    def test_settings_with_bom_keeps_other_keys(self):
+        f = paths.claude_settings_file()
+        f.parent.mkdir(parents=True)
+        f.write_bytes(b'\xef\xbb\xbf{"theme": "dark", "permissions": {"allow": ["Bash(ls)"]}}')
+        system.install_statusline()
+        s = paths.load_json(f)
+        self.assertEqual(s["theme"], "dark")
+        self.assertEqual(s["permissions"], {"allow": ["Bash(ls)"]})
+        self.assertIn("claude_usage_widget.statusline", s["statusLine"]["command"])
+
+    def test_unreadable_settings_are_never_overwritten(self):
+        f = paths.claude_settings_file()
+        f.parent.mkdir(parents=True)
+        broken = b'{"theme": "dark", "permissions": {},}'  # trailing comma
+        f.write_bytes(broken)
+        with self.assertRaises(ValueError):
+            system.install_statusline()
+        with self.assertRaises(ValueError):
+            system.uninstall_statusline()
+        self.assertEqual(f.read_bytes(), broken)
+
+    def test_installer_removes_hooks_without_the_venv(self):
+        # A Python upgrade can break the venv; uninstalling must still restore the old status line.
+        import importlib.util
+        from unittest import mock
+        spec = importlib.util.spec_from_file_location("installer", ROOT / "install.py")
+        installer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(installer)
+        self.assertFalse(installer.venv_python().exists())
+        paths.save_json(paths.claude_settings_file(), {"statusLine": {"type": "command", "command": "my-line"}})
+        system.install_statusline()
+        with mock.patch.object(system, "set_autostart") as autostart:  # don't touch the real login items
+            installer.remove_hooks()
+        autostart.assert_called_once_with(False)
+        self.assertEqual(paths.load_json(paths.claude_settings_file())["statusLine"]["command"], "my-line")
+
+
+class StatuslineHookTests(unittest.TestCase):
+    """Runs the hook the way Claude Code does: a separate process, UTF-8 bytes on stdin and stdout."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self.tmp.name)
+        self.env = dict(os.environ, CLAUDE_USAGE_WIDGET_HOME=str(self.home), PYTHONPATH=str(ROOT / "src"),
+                        PYTHONIOENCODING="cp1252", PYTHONUTF8="0")  # a Windows ANSI code page
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def hook(self, payload, chain=None):
+        if chain:
+            paths.save_json(self.home / "config.json", {"chain_statusline": chain})
+        r = subprocess.run([sys.executable, "-m", "claude_usage_widget.statusline"], env=self.env,
+                           input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                           capture_output=True, timeout=30)
+        self.assertEqual(r.returncode, 0, r.stderr.decode("utf-8", "replace"))
+        return r.stdout
+
+    def test_utf8_in_and_out_regardless_of_code_page(self):
+        out = self.hook({"model": {"display_name": "Opus 5.5"}, "cwd": "/home/Ёлка/проект",
+                         "rate_limits": {"five_hour": {"used_percentage": 31, "resets_at": 4102444800}}})
+        self.assertEqual(out, "Opus 5.5 · 5h 31%\n".encode("utf-8"))
+        saved = paths.load_json(self.home / "rate_limits.json")
+        self.assertEqual(saved["rate_limits"]["five_hour"]["used_percentage"], 31)
+
+    def test_chained_command_runs_in_bash(self):
+        if statusline.find_bash() is None:
+            self.skipTest("no bash on this machine")
+        # [[ ]] is bash-only (fails in dash and cmd.exe); \xe2\x9c\x93 is a UTF-8 check mark
+        out = self.hook({"model": {"display_name": "Opus 5.5"}},
+                        chain=r"""[[ "$(cat)" == *Opus* ]] && printf 'mine \xe2\x9c\x93'""")
+        self.assertEqual(out, "mine ✓".encode("utf-8"))
+
+    def test_failing_chained_command_falls_back_to_default_line(self):
+        out = self.hook({"model": {"display_name": "Opus 5.5"}}, chain="exit 3")
+        self.assertEqual(out, "Opus 5.5\n".encode("utf-8"))
 
 
 if __name__ == "__main__":

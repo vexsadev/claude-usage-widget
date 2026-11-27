@@ -59,10 +59,28 @@ def notified_file() -> Path:
 
 def load_json(path: Path, default=None):
     try:
-        with open(path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8-sig") as f:  # -sig: tolerate a BOM (Windows Notepad adds one)
             return json.load(f)
     except Exception:
         return {} if default is None else default
+
+
+def load_json_strict(path: Path) -> dict:
+    """Load a JSON object we are about to rewrite: {} if the file is missing, ValueError if unreadable.
+
+    Use this for files we don't own (Claude Code's settings.json), so a parse error never ends up
+    overwriting the user's settings with a near-empty file.
+    """
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        return {}
+    except (OSError, ValueError) as e:
+        raise ValueError(f"Could not read {path}: {e}") from e
+    if not isinstance(data, dict):
+        raise ValueError(f"Could not read {path}: it is not a JSON object")
+    return data
 
 
 def save_json(path: Path, data) -> None:

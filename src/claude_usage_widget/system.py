@@ -119,7 +119,7 @@ def set_autostart(enabled):
 def install_statusline():
     """Point Claude Code's statusLine at our command; chain any existing one. Returns a message."""
     settings_path = paths.claude_settings_file()
-    settings = paths.load_json(settings_path)
+    settings = paths.load_json_strict(settings_path)  # ValueError if unreadable: never overwrite it
     ours = statusline_command()
     cur = settings.get("statusLine") or {}
     msg = "Status line registered."
@@ -137,7 +137,7 @@ def install_statusline():
 
 def uninstall_statusline():
     settings_path = paths.claude_settings_file()
-    settings = paths.load_json(settings_path)
+    settings = paths.load_json_strict(settings_path)  # ValueError if unreadable: never overwrite it
     cur = settings.get("statusLine") or {}
     if "claude_usage_widget.statusline" not in str(cur.get("command", "")):
         return

@@ -162,6 +162,18 @@ def windows_shortcut(create):
 
 # ---------- main flows ----------
 
+def remove_hooks():
+    """Undo `--setup`: restore Claude Code's status line and turn off start at login.
+
+    Runs in this interpreter, not the venv's: the venv can be broken (a Homebrew or distro Python
+    upgrade leaves venv/bin/python dangling), and system.py is standard library only.
+    Raises ValueError, without changing anything, if Claude Code's settings.json is unreadable.
+    """
+    from claude_usage_widget import system
+    system.uninstall_statusline()
+    system.set_autostart(False)
+
+
 def install(args):
     if sys.version_info < (3, 9):
         sys.exit("Python 3.9 or newer is required.")
@@ -191,7 +203,10 @@ def install(args):
     setup = [venv_python(), "-m", "claude_usage_widget", "--setup"]
     if args.no_autostart:
         setup.append("--no-autostart")
-    run(setup)
+    try:
+        run(setup)
+    except subprocess.CalledProcessError:
+        sys.exit("Could not connect to Claude Code (see the message above).")
 
     launch = [str(venv_python(gui=True)), "-m", "claude_usage_widget"]
     if IS_LINUX:
@@ -215,11 +230,15 @@ def install(args):
 def uninstall(args):
     print("Uninstalling Claude Usage Widget")
     step("Stopping the widget")
-    stop_running()
+    try:
+        stop_running()
+    except Exception:
+        pass  # a broken venv can't be asked to quit; the files are removed below anyway
     step("Removing status line hook and start at login")
-    py = venv_python()
-    if py.exists():
-        subprocess.run([str(py), "-m", "claude_usage_widget", "--teardown"])
+    try:
+        remove_hooks()
+    except ValueError as e:
+        sys.exit(f"{e}\nFix or remove that file, then run the uninstaller again. Nothing was removed.")
     if IS_LINUX:
         gnome_extension(False)
         link = launcher_link()

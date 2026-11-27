@@ -41,7 +41,11 @@ Dev setup: `python3 -m venv .venv && . .venv/bin/activate && pip install -e .`
   `CLAUDE_CONFIG_DIR=$(mktemp -d) CLAUDE_USAGE_WIDGET_HOME=$(mktemp -d) python install.py --no-launch --no-autostart --no-gnome-extension --skip-lib-check`
 - Cross-platform: every OS-specific branch uses `IS_WINDOWS` / `IS_MAC` / `IS_LINUX` from `paths.py`.
   Claude Code runs the status line through bash even on Windows (forward-slash paths, quoted).
-  CI runs Ubuntu, Windows and macOS on Python 3.9 and 3.13 — keep 3.9 syntax (no `match`, no `X | Y` types).
+  CI runs Windows and macOS on Python 3.9 and 3.13, Ubuntu on 3.10 and 3.13 — keep 3.9 syntax
+  (no `match`, no `X | Y` types).
+- Never overwrite Claude Code's `settings.json` from a failed read: load it with `paths.load_json_strict`
+  (raises `ValueError`), not `load_json` (returns `{}`).
+- The status line hook does all I/O as UTF-8 bytes and runs the chained command with bash, like Claude Code.
 - Thresholds and colors are duplicated on purpose and must stay in sync: green < 80, amber 80–89, red ≥ 90,
   ⚠ at ≥ 95. Locations: `usage.status_level` / `THRESHOLDS`, `app.STATUS`, `gnome-extension/.../extension.js`
   (`colorFor`) and `stylesheet.css`, the README color table, and `docs/*.svg`.

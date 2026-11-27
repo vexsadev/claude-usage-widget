@@ -19,14 +19,18 @@ def main(argv=None):
 
     if args.setup or args.teardown:
         from . import system  # no Qt needed
-        if args.setup:
-            print(system.install_statusline())
-            system.set_autostart(not args.no_autostart)
-            print("Start at login:", "on" if not args.no_autostart else "off")
-        else:
-            system.uninstall_statusline()
-            system.set_autostart(False)
-            print("Status line and autostart removed.")
+        try:
+            if args.setup:
+                print(system.install_statusline())
+                system.set_autostart(not args.no_autostart)
+                print("Start at login:", "on" if not args.no_autostart else "off")
+            else:
+                system.uninstall_statusline()
+                system.set_autostart(False)
+                print("Status line and autostart removed.")
+        except ValueError as e:  # Claude Code's settings.json is unreadable; it was left untouched
+            print(f"{e}\nFix or remove that file, then run this again. Nothing was changed.", file=sys.stderr)
+            return 1
         return 0
 
     from . import app
