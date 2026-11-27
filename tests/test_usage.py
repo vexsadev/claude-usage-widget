@@ -120,6 +120,14 @@ class LimitsTests(unittest.TestCase):
         n.check({"five_hour": (95, reset + 18000)})  # new window
         self.assertEqual(len(sent), 3)
 
+    def test_pill_text_matches_gnome_pills(self):
+        now = 1_000_000
+        self.assertEqual(usage.pill_text(34, now + 3 * 3600 + 11 * 60, "5h", now), "34% 5h · 3h 11m")
+        self.assertEqual(usage.pill_text(96.4, now + 48 * 60, "5h", now), "⚠ 96% 5h · 48m")
+        self.assertEqual(usage.pill_text(41, now + 4 * 86400 + 2 * 3600, "wk", now), "41% wk · 4d 2h")
+        self.assertEqual(usage.pill_text(82.5, None, "wk", now), "83% wk")  # half rounds up, like JS
+        self.assertEqual(usage.pill_text(None, None, "5h", now), "– 5h")
+
     def test_status_levels(self):
         self.assertEqual([usage.status_level(p) for p in (10, 80, 89.9, 90, None)],
                          ["ok", "warn", "warn", "high", None])

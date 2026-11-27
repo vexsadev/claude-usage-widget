@@ -1,12 +1,13 @@
 """The Qt widget, tray icon and single-instance handling."""
+import math
 import os
 import sys
 import time
 from datetime import datetime
 
 from PySide6.QtCore import QPoint, QRectF, Qt, QTimer
-from PySide6.QtGui import (QAction, QActionGroup, QColor, QFont, QIcon, QLinearGradient, QPainter,
-                           QPainterPath, QPen, QPixmap)
+from PySide6.QtGui import (QAction, QActionGroup, QColor, QFont, QFontMetricsF, QIcon, QLinearGradient,
+                           QPainter, QPainterPath, QPen, QPixmap)
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon, QWidget
 
@@ -88,6 +89,52 @@ def tray_pixmap(limits, size=64):
     return pm
 
 
+# Long pills (macOS menu bar): same colors as gnome-extension/.../stylesheet.css
+PILL = {  # status level -> (fill, border, text)
+    "ok": (QColor(38, 66, 58, 217), QColor(74, 212, 158, 140), QColor(0xA3, 0xE8, 0xCB)),
+    "warn": (QColor(70, 60, 36, 217), QColor(250, 199, 84, 140), QColor(0xFC, 0xDF, 0xA0)),
+    "high": (QColor(72, 38, 42, 217), QColor(247, 112, 120, 140), QColor(0xFA, 0xB6, 0xBA)),
+    # GNOME's grey pill is translucent white, which vanishes on a light macOS menu bar
+    None: (QColor(52, 55, 62, 217), QColor(148, 156, 168, 140), QColor(0xD0, 0xD3, 0xD8)),
+}
+
+
+def pill_strip_pixmap(limits, now=None, height=18, dpr=2.0):
+    """Two long pills side by side, '34% 5h · 3h 11m' and '82% wk · 2d 4h', like the GNOME top bar."""
+    now = time.time() if now is None else now
+    f = font(max(9, round(height * 0.64)))
+    f.setWeight(QFont.DemiBold)
+    fm = QFontMetricsF(f)
+    pad, gap, border = height * 0.5, height * 0.33, 1.0
+    pills = []
+    for key, short, _name in LIMITS:
+        pct, reset = limits.get(key, (None, None))
+        text = usage.pill_text(pct, reset, short, now)
+        pills.append((text, usage.status_level(pct), fm.horizontalAdvance(text) + 2 * pad))
+    w = sum(p[2] for p in pills) + gap * (len(pills) - 1) + border
+    pm = QPixmap(math.ceil(w * dpr), math.ceil(height * dpr))
+    pm.setDevicePixelRatio(dpr)
+    pm.fill(Qt.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.Antialiasing)
+    p.setRenderHint(QPainter.TextAntialiasing)
+    p.setFont(f)
+    x = border / 2
+    for text, level, pw in pills:
+        fill, edge, ink = PILL[level]
+        rect = QRectF(x, border / 2, pw, height - border)
+        path = QPainterPath()
+        path.addRoundedRect(rect, rect.height() / 2, rect.height() / 2)
+        p.fillPath(path, fill)
+        p.setPen(QPen(edge, border))
+        p.drawPath(path)
+        p.setPen(ink)
+        p.drawText(rect, Qt.AlignCenter, text)
+        x += pw + gap
+    p.end()
+    return pm
+
+
 def tray_icon(limits):
     """Icon with a pixmap drawn for each common tray size, so the numbers stay sharp."""
     icon = QIcon()
@@ -119,7 +166,10 @@ class Widget(QWidget):
         self.setFixedSize(self.W, self.calc_h())
 
         self.tray = None
-        if QSystemTrayIcon.isSystemTrayAvailable():
+        if IS_MAC and not demo:  # long pills; QSystemTrayIcon only gives a square menu-bar slot
+            from . import macbar
+            self.tray = macbar.create(self.build_menu(tray=True))
+        if self.tray is None and QSystemTrayIcon.isSystemTrayAvailable():
             self.tray = QSystemTrayIcon(self)
             self.tray.setContextMenu(self.build_menu(tray=True))
             self.tray.activated.connect(self._tray_activated)
@@ -275,7 +325,10 @@ class Widget(QWidget):
     def _update_tray(self):
         if not self.tray:
             return
-        self.tray.setIcon(tray_icon(self.limits))
+        if hasattr(self.tray, "set_limits"):  # macOS menu-bar pills
+            self.tray.set_limits(self.limits)
+        else:
+            self.tray.setIcon(tray_icon(self.limits))
         now = time.time()
         lines = []
         for key, short, name in LIMITS:
@@ -476,5 +529,6 @@ def screenshot(out, demo=True):
     pm.save(out)
     base, ext = os.path.splitext(out)
     tray_pixmap(w.limits, 64).save(base + "-tray" + ext)
-    print("wrote", out, "and", base + "-tray" + ext)
+    pill_strip_pixmap(w.limits).save(base + "-menubar" + ext)
+    print(f"wrote {out}, {base}-tray{ext} and {base}-menubar{ext}")
     return 0

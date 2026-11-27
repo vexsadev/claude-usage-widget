@@ -3,7 +3,8 @@
     pip install -e . pillow
     QT_QPA_PLATFORM=offscreen python docs/make_media.py     # Windows: QT_QPA_PLATFORM=windows
 
-Writes docs/widget.png, docs/demo.gif and docs/tray.png. (banner.svg and pills.svg are hand-written.)
+Writes docs/widget.png, docs/demo.gif, docs/tray.png and docs/menubar.png.
+(banner.svg and pills.svg are hand-written.)
 """
 import io
 import math
@@ -128,6 +129,35 @@ def tray_strip():
     print("wrote", path)
 
 
+def menubar_strip():
+    """The macOS menu-bar pills at three levels, on a dark and a light menu bar."""
+    now = 1_000_000
+    states = [
+        {"five_hour": (34, now + 3 * 3600 + 11 * 60), "seven_day": (21, now + 4 * 86400 + 2 * 3600)},
+        {"five_hour": (86, now + 48 * 60), "seven_day": (58, now + 2 * 86400 + 5 * 3600)},
+        {"five_hour": (96, now + 48 * 60), "seven_day": (41, now + 4 * 86400 + 2 * 3600)},
+    ]
+    pms = [wapp.pill_strip_pixmap(s, now, 18, SCALE) for s in states]
+    row, pad = 30, 16
+    w = max(pm.width() for pm in pms) / SCALE + 2 * pad
+    h = row * len(states) + 2 * pad - 12
+    img = QImage(int(w * 2 * SCALE), int(h * SCALE), QImage.Format_ARGB32)
+    img.setDevicePixelRatio(SCALE)
+    img.fill(Qt.transparent)
+    p = QPainter(img)
+    p.setRenderHint(QPainter.Antialiasing)
+    for col, bg in enumerate((QColor(22, 24, 30), QColor(236, 236, 238))):
+        path = QPainterPath()
+        path.addRoundedRect(QRectF(col * w + (6 if col else 0), 0, w - 6, h), 14, 14)
+        p.fillPath(path, bg)
+        for i, pm in enumerate(pms):
+            p.drawPixmap(int(col * w + (6 if col else 0) + pad), int(pad - 6 + i * row), pm)
+    p.end()
+    path = os.path.join(DOCS, "menubar.png")
+    img.save(path)
+    print("wrote", path)
+
+
 def main():
     QApplication.instance() or QApplication(sys.argv[:1])
     widget = wapp.Widget(QApplication.instance(), demo=True)
@@ -140,6 +170,7 @@ def main():
     print("wrote", os.path.join(DOCS, "widget.png"))
     demo_gif(widget)
     tray_strip()
+    menubar_strip()
 
 
 if __name__ == "__main__":

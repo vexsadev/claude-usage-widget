@@ -72,7 +72,7 @@
   <tr>
     <td valign="top">
       <h3>🗂️ Tray icon</h3>
-      Two stacked number pills (5-hour on top, weekly below) in the tray or menu bar, colored like the limits. Hover for reset times, click to show or hide the widget.
+      Two stacked number pills (5-hour on top, weekly below) in the Windows and Linux tray, colored like the limits. Hover for reset times, click to show or hide the widget. On macOS, long pills like <code>34% 5h · 3h 11m</code> right in the menu bar.
     </td>
     <td valign="top">
       <h3>🐧 GNOME top bar</h3>
@@ -94,7 +94,12 @@
 
 <p align="center">
   <img src="docs/tray.png" alt="Tray icons with percentage pills: green under 80%, amber from 80%, red from 90%" width="450"><br>
-  <sub>Tray / menu-bar icon: the top pill is the 5-hour limit, the bottom pill is weekly</sub>
+  <sub>Tray icon (Windows, Linux): the top pill is the 5-hour limit, the bottom pill is weekly</sub>
+</p>
+
+<p align="center">
+  <img src="docs/menubar.png" alt="macOS menu-bar pills such as 34% 5h · 3h 11m and 21% wk · 4d 2h, green, amber and red, on dark and light menu bars" width="720"><br>
+  <sub>macOS menu bar: the 5-hour and weekly limits with time until reset, on dark and light menu bars</sub>
 </p>
 
 | Used | Color | Extra |
@@ -167,7 +172,7 @@ python3 install.py
 
 **3. Start a Claude Code session** (`claude`) and send any message so the limits appear.
 
-✅ The widget appears in the top-right corner and shows on every Space. Its icon is in the **menu bar**; click it for the menu. It doesn't add a Dock icon.
+✅ The widget appears in the top-right corner and shows on every Space. The **menu bar** shows two colored pills, like `34% 5h · 3h 11m` and `82% wk · 2d 4h`; click them for the menu. It doesn't add a Dock icon.
 
 > [!TIP]
 > **Notifications:** the first alert comes from *Script Editor*. If macOS asks, click **Allow**. If you don't see alerts, check **System Settings → Notifications → Script Editor**.
@@ -230,7 +235,7 @@ python3 install.py
 |---|---|
 | Move the widget | Drag it with the left mouse button. Its position is remembered. |
 | Hide the widget | Click the **–** button at its top-right. It keeps running in the tray. |
-| Show it again | Click the tray icon (Windows and Linux) or use its menu (macOS), or run `claude-usage-widget` again. |
+| Show it again | Click the tray icon (Windows and Linux) or click the menu-bar pills and choose **Show widget** (macOS), or run `claude-usage-widget` again. |
 | Change the transparency | Right-click → **Opacity** |
 | Turn start at login on or off | Right-click → **Start at login** |
 | Check that notifications work | Right-click → **Test notification** |
@@ -395,7 +400,7 @@ python -m unittest discover -s tests -v             # unit tests (no display nee
 QT_QPA_PLATFORM=offscreen claude-usage-widget --screenshot shot.png   # render with demo data
 ```
 
-To regenerate the README images (`docs/widget.png`, `docs/demo.gif`, `docs/tray.png`) from the real drawing code, and the animated diagram:
+To regenerate the README images (`docs/widget.png`, `docs/demo.gif`, `docs/tray.png`, `docs/menubar.png`) from the real drawing code, and the animated diagram:
 
 ```bash
 pip install pillow
@@ -421,6 +426,7 @@ CI runs the unit tests, the real installer, a headless render, a status line che
 src/claude_usage_widget/
   __main__.py    command line (--toggle, --quit, --screenshot, --setup, --teardown)
   app.py         Qt widget, tray icon, single instance
+  macbar.py      macOS menu-bar pills (its own NSStatusItem, via pyobjc)
   usage.py       transcript parsing, prices, limits, notifications (standard library only)
   system.py      start at login, status line hook, notifications, window tweaks per OS
   statusline.py  the Claude Code status line hook (standard library only)

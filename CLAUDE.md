@@ -9,7 +9,8 @@ Runs on Windows, macOS and Linux. Python 3.9+.
 ```
 src/claude_usage_widget/
   __main__.py    CLI entry (argparse); imports Qt lazily so --setup/--teardown work without it
-  app.py         Qt widget, tray icon, single-instance socket, --screenshot rendering
+  app.py         Qt widget, tray icon, menu-bar pill drawing, single-instance socket, --screenshot
+  macbar.py      macOS only: variable-width NSStatusItem with the long pills (Qt's tray is square there)
   usage.py       transcript parsing, PRICES table, cost, limits, notifications   [stdlib only]
   statusline.py  Claude Code statusLine command: saves rate_limits.json, chains old command [stdlib only]
   system.py      autostart, statusLine install/uninstall, notifications, window tweaks  [stdlib only]
@@ -50,8 +51,9 @@ Dev setup: `python3 -m venv .venv && . .venv/bin/activate && pip install -e .`
   `data-dir` key `install.py` stamps into its `metadata.json`. Always go through `data_dir()`.
 - The status line hook does all I/O as UTF-8 bytes and runs the chained command with bash, like Claude Code.
 - Thresholds and colors are duplicated on purpose and must stay in sync: green < 80, amber 80–89, red ≥ 90,
-  ⚠ at ≥ 95. Locations: `usage.status_level` / `THRESHOLDS`, `app.STATUS`, `gnome-extension/.../extension.js`
-  (`colorFor`) and `stylesheet.css`, the README color table, and `docs/*.svg`.
+  ⚠ at ≥ 95. Locations: `usage.status_level` / `THRESHOLDS`, `app.STATUS`, `app.PILL` (mirrors the
+  extension's `stylesheet.css`), `usage.pill_text` (mirrors the extension's pill label),
+  `gnome-extension/.../extension.js` (`colorFor`) and `stylesheet.css`, the README color table, and `docs/*.svg`.
 - Prices: `PRICES` in `usage.py` (USD per MTok: input, output, cache read; longest prefix wins). When
   changing prices, also update the tests in `tests/test_usage.py`.
 - The widget makes no network requests and never reads credentials. Keep it that way.

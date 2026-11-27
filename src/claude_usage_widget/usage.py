@@ -69,6 +69,14 @@ def fmt_dur(sec):
     return f"{m}m"
 
 
+def pill_text(pct, reset, short, now):
+    """Label of a long limit pill, as in the GNOME top bar: '34% 5h · 3h 11m', '⚠ 96% 5h · 48m'."""
+    warn = "⚠ " if pct is not None and pct >= 95 else ""
+    num = "–" if pct is None else f"{int(pct + 0.5)}%"  # round half up, like the extension's Math.round
+    left = f" · {fmt_dur(reset - now)}" if reset else ""
+    return f"{warn}{num} {short}{left}"
+
+
 def parse_ts(s):
     try:
         return datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp()

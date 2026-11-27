@@ -59,6 +59,35 @@ jobs:
           echo "$OUT"
           [[ "$OUT" == *"5h 31%"* ]]
 
+      - name: Menu-bar pills (macOS)
+        if: runner.os == 'macOS'
+        env:
+          QT_QPA_PLATFORM: cocoa
+        run: |
+          "$HOME/Library/Application Support/claude-usage-widget/venv/bin/python" - <<'EOF'
+          import time
+          from PySide6.QtWidgets import QApplication, QMenu
+          app = QApplication([])
+          from claude_usage_widget import macbar
+          menu = QMenu()
+          menu.addAction("Quit")
+          bar = macbar.MenuBarPills(menu)  # directly, so errors aren't hidden by create()'s fallback
+          now = time.time()
+          bar.set_limits({"five_hour": (96, now + 2900), "seven_day": (41, now + 360000)})
+          size = bar.button.image().size()
+          label = bar.button.accessibilityLabel()
+          print(f"menu-bar image {size.width:.0f} x {size.height:.0f} pt; {label}")
+          assert size.width > 4 * size.height, size
+          assert "96% 5h" in label and "41% wk" in label, label
+          bar.setToolTip("Claude usage")
+          bar.button.performClick_(None)  # Objective-C action -> Python callback -> menu below the pills
+          app.processEvents()
+          print("menu opened:", menu.isVisible(), "at", menu.pos().x(), menu.pos().y())
+          assert menu.isVisible()
+          menu.hide()
+          bar.setVisible(False)
+          EOF
+
       - name: Uninstall
         run: python install.py --uninstall
 
