@@ -80,10 +80,11 @@ def stop_running():
 def missing_linux_libs():
     """Debian/Ubuntu packages for the Qt xcb libraries that can't be loaded; None if we can't tell.
 
-    Asks the dynamic loader directly (ldconfig is in /sbin, often not on a user's PATH). If none
-    of them load, the system probably doesn't use standard library paths (NixOS, Guix): we can't
-    tell, so we don't block the install.
+    Asks the dynamic loader directly (ldconfig is in /sbin, often not on a user's PATH). NixOS and
+    Guix don't use standard library paths, so there we can't tell and don't block the install.
     """
+    if os.path.exists("/etc/NIXOS") or os.path.isdir("/gnu/store"):
+        return None
     import ctypes
     missing = []
     for lib, pkg in LINUX_QT_LIBS.items():
@@ -91,8 +92,6 @@ def missing_linux_libs():
             ctypes.CDLL(lib)
         except OSError:
             missing.append(pkg)
-    if len(missing) == len(LINUX_QT_LIBS):
-        return None
     return missing
 
 

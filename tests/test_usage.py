@@ -294,15 +294,23 @@ class PlatformEdgeTests(unittest.TestCase):
             self.assertEqual(paths.load_json(target), {"ok": 1})
             self.assertEqual(sorted(p.name for p in Path(d).iterdir()), ["rate_limits.json"])
 
-    def test_lib_check_uses_loader_and_gives_up_when_nothing_loads(self):
+    def test_lib_check_uses_loader(self):
         from unittest import mock
         installer = load_installer()
-        with mock.patch("ctypes.CDLL", side_effect=OSError):
-            self.assertIsNone(installer.missing_linux_libs())  # NixOS-like: can't tell
+        real_exists = os.path.exists
+        not_nixos = lambda p: False if p == "/etc/NIXOS" else real_exists(p)  # noqa: E731
+        with mock.patch("ctypes.CDLL", side_effect=OSError), mock.patch("os.path.exists", not_nixos), \
+                mock.patch("os.path.isdir", lambda p: False):
+            # a minimal system missing every library must still be warned about
+            self.assertEqual(installer.missing_linux_libs(), list(installer.LINUX_QT_LIBS.values()))
+        with mock.patch("ctypes.CDLL", side_effect=OSError), \
+                mock.patch("os.path.exists", lambda p: p == "/etc/NIXOS" or real_exists(p)):
+            self.assertIsNone(installer.missing_linux_libs())  # NixOS: can't tell
         def only_cursor_missing(name):
             if name == "libxcb-cursor.so.0":
                 raise OSError(name)
-        with mock.patch("ctypes.CDLL", side_effect=only_cursor_missing):
+        with mock.patch("ctypes.CDLL", side_effect=only_cursor_missing), mock.patch("os.path.exists", not_nixos), \
+                mock.patch("os.path.isdir", lambda p: False):
             self.assertEqual(installer.missing_linux_libs(), ["libxcb-cursor0"])
 
     def test_store_python_detected(self):
