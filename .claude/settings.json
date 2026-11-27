@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(python -m unittest:*)",
+      "Bash(python3 -m unittest:*)",
+      "Bash(QT_QPA_PLATFORM=offscreen python -m claude_usage_widget --screenshot:*)",
+      "Bash(QT_QPA_PLATFORM=offscreen python docs/make_media.py)",
+      "Bash(python docs/make_diagram.py)",
+      "Bash(python -m py_compile:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)"
+    ],
+    "ask": [
+      "Bash(python install.py:*)",
+      "Bash(python3 install.py:*)",
+      "Bash(python -m claude_usage_widget --setup:*)",
+      "Bash(python -m claude_usage_widget --teardown:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Read(~/.claude/.credentials.json)",
+      "Edit(~/.claude/settings.json)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"import json,sys,py_compile; f=json.load(sys.stdin).get('tool_input',{}).get('file_path','');\nif f.endswith('.py'):\n  try: py_compile.compile(f, doraise=True)\n  except py_compile.PyCompileError as e: sys.stderr.write(str(e)); sys.exit(2)\""
+          }
+        ]
+      }
+    ]
+  }
+}
