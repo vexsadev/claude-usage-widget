@@ -8,6 +8,7 @@ Uses only the Python standard library. Creates a private virtual environment, so
 installed into your system Python.
 """
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -113,6 +114,17 @@ def linux_desktop_files(cmd):
         info(f"(add {link.parent} to your PATH to run 'claude-usage-widget' from a terminal)")
 
 
+def copy_extension(dest):
+    """Copy the GNOME extension, telling it where the data folder is (it can't see our env vars)."""
+    dest.mkdir(parents=True, exist_ok=True)
+    for f in (HERE / "gnome-extension" / EXT_UUID).iterdir():
+        shutil.copy2(f, dest / f.name)
+    meta_file = dest / "metadata.json"
+    meta = json.loads(meta_file.read_text(encoding="utf-8"))
+    meta["data-dir"] = str(paths.data_dir())
+    meta_file.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+
+
 def gnome_extension(install):
     if not IS_LINUX or not shutil.which("gnome-shell"):
         return
@@ -127,9 +139,7 @@ def gnome_extension(install):
         enabled = None
     if install:
         step("Installing GNOME Shell extension (colored limit pills in the top bar)")
-        dest.mkdir(parents=True, exist_ok=True)
-        for f in (HERE / "gnome-extension" / EXT_UUID).iterdir():
-            shutil.copy2(f, dest / f.name)
+        copy_extension(dest)
         if enabled is not None and EXT_UUID not in enabled:
             subprocess.run(["gsettings", "set", "org.gnome.shell", "enabled-extensions",
                             str(enabled + [EXT_UUID])])
@@ -191,6 +201,7 @@ def install(args):
             run([sys.executable, "-m", "venv", venv_dir()])
         except subprocess.CalledProcessError:
             sys.exit("Could not create a virtual environment. On Debian/Ubuntu: sudo apt install python3-venv")
+    (venv_dir() / paths.VENV_MARKER).write_text("Claude Usage Widget data lives in the parent folder.\n")
     info(str(venv_dir()))
 
     step("Installing the widget and Qt (first run downloads ~100 MB)")

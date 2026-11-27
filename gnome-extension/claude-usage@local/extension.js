@@ -1,5 +1,6 @@
 // Claude Usage — colored 5-hour / weekly limit pills in the GNOME top bar.
-// Reads $XDG_DATA_HOME/claude-usage-widget/rate_limits.json (written by the Claude Code status line hook).
+// Reads rate_limits.json (written by the Claude Code status line hook) from the data folder the
+// installer stamps into metadata.json, default $XDG_DATA_HOME/claude-usage-widget.
 // Green < 80%, yellow 80–89%, red >= 90%, warning sign at >= 95%.
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
@@ -11,7 +12,6 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-const RATE_FILE = GLib.build_filenamev([GLib.get_user_data_dir(), 'claude-usage-widget', 'rate_limits.json']);
 const WIDGET_BIN = GLib.build_filenamev([GLib.get_home_dir(), '.local', 'bin', 'claude-usage-widget']);
 const LIMITS = [
     {key: 'five_hour', short: '5h', name: '5-hour'},
@@ -36,9 +36,9 @@ function colorFor(pct) {
     return 'claude-green';
 }
 
-function readLimits() {
+function readLimits(rateFile) {
     try {
-        const [ok, bytes] = GLib.file_get_contents(RATE_FILE);
+        const [ok, bytes] = GLib.file_get_contents(rateFile);
         if (!ok) return null;
         const d = JSON.parse(new TextDecoder().decode(bytes));
         return d.rate_limits || null;
@@ -58,6 +58,10 @@ function spawn(argv) {
 
 export default class ClaudeUsageExtension extends Extension {
     enable() {
+        // the installer stamps "data-dir" into metadata.json (it may be a custom CLAUDE_USAGE_WIDGET_HOME)
+        const dataDir = this.metadata['data-dir'] ||
+            GLib.build_filenamev([GLib.get_user_data_dir(), 'claude-usage-widget']);
+        this._rateFile = GLib.build_filenamev([dataDir, 'rate_limits.json']);
         this._button = new PanelMenu.Button(0.5, 'Claude Usage', false);
         const box = new St.BoxLayout({style_class: 'claude-usage-box'});
         this._pills = {};
@@ -97,7 +101,7 @@ export default class ClaudeUsageExtension extends Extension {
     }
 
     _update() {
-        const rl = readLimits() || {};
+        const rl = readLimits(this._rateFile) || {};
         const now = Date.now() / 1000;
         for (const l of LIMITS) {
             const v = rl[l.key];
@@ -123,7 +127,7 @@ export default class ClaudeUsageExtension extends Extension {
                 : `${l.name}: ${Math.round(pct)}% used` + (reset ? ` · resets in ${fmtDur(reset - now)}` : '');
         }
         try {
-            const info = Gio.File.new_for_path(RATE_FILE).query_info('time::modified', 0, null);
+            const info = Gio.File.new_for_path(this._rateFile).query_info('time::modified', 0, null);
             const age = now - info.get_modification_date_time().to_unix();
             this._updated.label.text = age < 60 ? 'Updated just now' : `Updated ${fmtDur(age)} ago`;
         } catch (e) {

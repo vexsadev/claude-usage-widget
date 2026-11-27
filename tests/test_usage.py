@@ -184,6 +184,75 @@ class StatuslineSetupTests(unittest.TestCase):
         self.assertEqual(paths.load_json(paths.claude_settings_file())["statusLine"]["command"], "my-line")
 
 
+    def test_keep_data_uninstall_forgets_restored_command(self):
+        # install -> uninstall --keep-data -> user drops their status line -> reinstall
+        paths.save_json(paths.claude_settings_file(), {"statusLine": {"type": "command", "command": "old-line"}})
+        system.install_statusline()
+        system.uninstall_statusline()
+        self.assertNotIn("chain_statusline", paths.load_json(paths.config_file()))
+        paths.save_json(paths.claude_settings_file(), {})
+        system.install_statusline()
+        system.uninstall_statusline()
+        self.assertNotIn("statusLine", paths.load_json(paths.claude_settings_file()))
+
+    def test_save_writes_through_symlink(self):
+        real = Path(self.tmp.name) / "dotfiles" / "settings.json"
+        real.parent.mkdir()
+        real.write_text('{"theme": "dark"}')
+        link = paths.claude_settings_file()
+        link.parent.mkdir(parents=True)
+        try:
+            link.symlink_to(real)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks not allowed here")
+        system.install_statusline()
+        self.assertTrue(link.is_symlink())
+        self.assertIn("statusLine", paths.load_json(real))
+        self.assertEqual([p.name for p in real.parent.iterdir()], ["settings.json"])  # no temp left
+
+
+class CustomHomeTests(unittest.TestCase):
+    """A CLAUDE_USAGE_WIDGET_HOME chosen at install time must hold later, without the variable."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self.tmp.name) / "custom home"
+        self.venv = self.home / "venv"
+        self.venv.mkdir(parents=True)
+        os.environ.pop("CLAUDE_USAGE_WIDGET_HOME", None)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_installed_venv_finds_its_data_dir(self):
+        from unittest import mock
+        with mock.patch.object(sys, "prefix", str(self.venv)):
+            self.assertNotEqual(paths.data_dir(), self.home)  # no marker: the OS default
+            (self.venv / paths.VENV_MARKER).write_text("")
+            self.assertEqual(paths.data_dir(), self.home)
+            os.environ["CLAUDE_USAGE_WIDGET_HOME"] = str(Path(self.tmp.name) / "explicit")
+            try:
+                self.assertEqual(paths.data_dir(), Path(self.tmp.name) / "explicit")  # env still wins
+            finally:
+                os.environ.pop("CLAUDE_USAGE_WIDGET_HOME")
+
+    def test_gnome_extension_gets_data_dir(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("installer", ROOT / "install.py")
+        installer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(installer)
+        os.environ["CLAUDE_USAGE_WIDGET_HOME"] = str(self.home)
+        try:
+            dest = Path(self.tmp.name) / "ext"
+            installer.copy_extension(dest)
+        finally:
+            os.environ.pop("CLAUDE_USAGE_WIDGET_HOME")
+        meta = json.loads((dest / "metadata.json").read_text(encoding="utf-8"))
+        self.assertEqual(meta["data-dir"], str(self.home))
+        self.assertEqual(meta["uuid"], "claude-usage@local")
+        self.assertTrue((dest / "extension.js").is_file())
+
+
 class StatuslineHookTests(unittest.TestCase):
     """Runs the hook the way Claude Code does: a separate process, UTF-8 bytes on stdin and stdout."""
 

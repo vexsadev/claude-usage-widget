@@ -141,13 +141,16 @@ def uninstall_statusline():
     cur = settings.get("statusLine") or {}
     if "claude_usage_widget.statusline" not in str(cur.get("command", "")):
         return
-    chained = paths.load_json(paths.config_file()).get("chain_statusline")
+    cfg = paths.load_json(paths.config_file())
+    chained = cfg.pop("chain_statusline", None)
     if chained:
         cur["command"] = chained
         settings["statusLine"] = cur
     else:
         settings.pop("statusLine", None)
     paths.save_json(settings_path, settings)
+    if chained and paths.config_file().exists():  # --keep-data keeps config.json; don't revive it later
+        paths.save_json(paths.config_file(), cfg)
 
 
 # ---------- notifications ----------

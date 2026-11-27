@@ -45,6 +45,9 @@ Dev setup: `python3 -m venv .venv && . .venv/bin/activate && pip install -e .`
   (no `match`, no `X | Y` types).
 - Never overwrite Claude Code's `settings.json` from a failed read: load it with `paths.load_json_strict`
   (raises `ValueError`), not `load_json` (returns `{}`).
+- Data folder: `paths.data_dir()` = `CLAUDE_USAGE_WIDGET_HOME`, else the parent of an installed venv
+  (marked by `paths.VENV_MARKER`), else the OS default. The GNOME extension reads it from the
+  `data-dir` key `install.py` stamps into its `metadata.json`. Always go through `data_dir()`.
 - The status line hook does all I/O as UTF-8 bytes and runs the chained command with bash, like Claude Code.
 - Thresholds and colors are duplicated on purpose and must stay in sync: green < 80, amber 80–89, red ≥ 90,
   ⚠ at ≥ 95. Locations: `usage.status_level` / `THRESHOLDS`, `app.STATUS`, `gnome-extension/.../extension.js`

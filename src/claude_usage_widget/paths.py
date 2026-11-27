@@ -1,6 +1,7 @@
 """Filesystem locations, per OS. Standard library only (used by the status line and installer)."""
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -8,6 +9,7 @@ APP_NAME = "claude-usage-widget"
 IS_WINDOWS = sys.platform.startswith("win")
 IS_MAC = sys.platform == "darwin"
 IS_LINUX = sys.platform.startswith("linux")
+VENV_MARKER = "claude-usage-widget-home"  # the installer puts this in <data dir>/venv
 
 
 def claude_dir() -> Path:
@@ -31,11 +33,16 @@ def data_dir() -> Path:
     Linux:   $XDG_DATA_HOME/claude-usage-widget   (~/.local/share/claude-usage-widget)
     macOS:   ~/Library/Application Support/claude-usage-widget
     Windows: %LOCALAPPDATA%\\claude-usage-widget
-    Override with CLAUDE_USAGE_WIDGET_HOME.
+    Override with CLAUDE_USAGE_WIDGET_HOME. Code running from the installed venv uses the folder that
+    venv lives in, so a custom home chosen at install time also holds for the status line hook,
+    autostart and manual launches, which don't inherit the variable.
     """
     env = os.environ.get("CLAUDE_USAGE_WIDGET_HOME")
     if env:
         return Path(env).expanduser()
+    venv = Path(sys.prefix)
+    if (venv / VENV_MARKER).is_file():
+        return venv.parent
     if IS_WINDOWS:
         base = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
         return Path(base) / APP_NAME
@@ -84,9 +91,20 @@ def load_json_strict(path: Path) -> dict:
 
 
 def save_json(path: Path, data) -> None:
-    """Atomic write (temp file + replace)."""
+    """Atomic write (temp file + replace).
+
+    Writes through symlinks (dotfile managers link settings.json) and keeps the file's permissions.
+    The temp name is per process, so two Claude Code sessions saving at once can't mix their output.
+    """
+    path = Path(os.path.realpath(path))
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-    os.replace(tmp, path)
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        if path.exists():
+            shutil.copymode(path, tmp)
+        os.replace(tmp, path)
+    finally:
+        if tmp.exists():
+            tmp.unlink()
