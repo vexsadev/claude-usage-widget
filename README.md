@@ -209,7 +209,7 @@ cd claude-usage-widget
 python3 install.py
 ```
 
-**3. GNOME only:** log out and back in once. The installer adds a GNOME Shell extension that draws colored limit pills in the top bar, and GNOME only loads new extensions at login.
+**3. GNOME only:** log out and back in once. The installer adds a GNOME Shell extension that draws colored limit pills like `34% 5h · 3h 11m` in the top bar, and GNOME (especially on Wayland) only loads new extensions at login. Once the pills are showing, the widget hides its own tray icon.
 
 **4. Start a Claude Code session** (`claude`) and send any message so the limits appear.
 
@@ -218,7 +218,8 @@ python3 install.py
 
 - **Tray icon on GNOME:** GNOME needs an AppIndicator extension to show tray icons. Ubuntu includes one. On Fedora and other distributions, install [AppIndicator and KStatusNotifierItem Support](https://extensions.gnome.org/extension/615/appindicator-support/). Or rely on the top-bar pills; while they're running, the widget hides its own tray icon.
 - **KDE, Xfce, Cinnamon** and other desktops show the tray icon out of the box.
-- **Wayland:** Wayland doesn't let apps keep their own windows on top, so the widget runs through XWayland (X11 compatibility), where always-on-top works. That's why the X11 (`xcb`) libraries above are needed.
+- **Wayland:** Wayland doesn't let apps keep their own windows on top, so the widget runs through XWayland (X11 compatibility), where always-on-top works. That's why the X11 (`xcb`) libraries above are needed. If you force native Wayland (`QT_QPA_PLATFORM=wayland`), the widget still runs, but can't stay on top or follow you between workspaces.
+- **Library check:** the installer checks that Qt can load the X11 libraries and lists the packages to install if any are missing. On NixOS and Guix it can't check, so it carries on.
 </details>
 
 ---
@@ -260,7 +261,7 @@ git pull
 python3 install.py        # Windows: py install.py
 ```
 
-Your settings (position, opacity, start at login) are kept.
+Your settings (position, opacity, start at login) are kept. Re-running the installer is also how you repair an install, for example after a Python upgrade.
 
 ## 🗑️ Uninstalling
 
@@ -270,6 +271,21 @@ python3 install.py --uninstall        # Windows: py install.py --uninstall
 ```
 
 This stops the widget, removes start at login, the Start menu or app-menu entry and the GNOME extension, deletes the app folder, and restores your previous Claude Code status line. Add `--keep-data` to keep your settings.
+
+Uninstalling works even if the widget's own Python environment is broken (for example after Homebrew or your distribution upgraded Python). If your Claude Code settings file can't be read, the uninstaller stops before removing anything and tells you which file to fix.
+
+## 🧰 Installer options
+
+| Option | What it does |
+|---|---|
+| `--no-autostart` | Don't start the widget at login. |
+| `--no-launch` | Don't start the widget after installing. |
+| `--no-gnome-extension` | Linux: skip the GNOME top-bar pills. |
+| `--skip-lib-check` | Linux: install even if Qt's X11 libraries look missing. |
+| `--allow-store-python` | Windows: install with the Microsoft Store Python anyway (not recommended). |
+| `--uninstall` | Remove the widget. Add `--keep-data` to keep your settings. |
+
+**Custom app folder:** set `CLAUDE_USAGE_WIDGET_HOME` when you run the installer, for example `CLAUDE_USAGE_WIDGET_HOME=~/apps/claude-usage python3 install.py`. The widget, the status line hook, start at login and the GNOME pills all keep using that folder afterwards, so you don't need to set the variable anywhere else.
 
 ---
 
@@ -286,7 +302,7 @@ This stops the widget, removes start at login, the Start menu or app-menu entry 
 <details>
 <summary><b>I already had a custom status line.</b></summary>
 
-The installer keeps it. Claude Code runs the widget's hook first, and the hook then runs your original command, so your terminal still shows your own status line. Uninstalling puts it back.
+The installer keeps it. Claude Code runs the widget's hook first, and the hook then runs your original command with **bash**, the same way Claude Code does (Git Bash on Windows), so your terminal still shows your own status line. If your command fails or prints nothing, you see the widget's short line (`Opus 5.5 · 5h 31%`) instead of a blank one. Uninstalling puts your command back.
 </details>
 
 <details>
@@ -305,6 +321,24 @@ Install the libraries listed in the Linux install steps.
 <summary><b>No tray icon on GNOME.</b></summary>
 
 See the Linux notes above. You need an AppIndicator extension or the included top-bar extension, and you need to log out and back in after installing.
+</details>
+
+<details>
+<summary><b>"Could not read …/.claude/settings.json" when installing or uninstalling.</b></summary>
+
+Claude Code's settings file isn't valid JSON, often because of a trailing comma or a missing quote. The installer never overwrites a file it can't read, so **nothing was changed**. Fix the file (or move it away), then run the installer again. Files saved by Windows Notepad with a byte-order mark are fine.
+</details>
+
+<details>
+<summary><b>"This is the Microsoft Store version of Python" (Windows).</b></summary>
+
+The Store version of Python keeps its files and registry changes in a private copy, so Claude Code and start at login wouldn't find the widget. Install Python from [python.org](https://www.python.org/downloads/windows/) or with `winget install Python.Python.3.13`, then run `py install.py` again.
+</details>
+
+<details>
+<summary><b>"Qt needs some system libraries that are missing" (Linux).</b></summary>
+
+Install the packages the installer lists (they're also in the Linux install steps), then run it again. If you're sure Qt will find them anyway, add `--skip-lib-check`.
 </details>
 
 <details>
@@ -333,7 +367,7 @@ Prices are in the `PRICES` table at the top of [`src/claude_usage_widget/usage.p
   <img src="docs/how-it-works.svg" alt="Data flow: Claude Code sends plan limits to the status line hook, which saves rate_limits.json for the top-bar pills, tray icon, alerts and widget; Claude Code also writes session logs that the widget reads every 2 seconds for tokens and cost" width="100%">
 </p>
 
-- **Plan limits:** Claude Code passes JSON to its [status line command](https://docs.claude.com/en/docs/claude-code/statusline) after each turn, and that JSON includes `rate_limits.five_hour` and `rate_limits.seven_day` (`used_percentage`, `resets_at`). The installer registers a small hook as your status line, and the hook saves those values to a file.
+- **Plan limits:** Claude Code passes JSON to its [status line command](https://docs.claude.com/en/docs/claude-code/statusline) after each turn, and that JSON includes `rate_limits.five_hour` and `rate_limits.seven_day` (`used_percentage`, `resets_at`). The installer registers a small hook as your status line, and the hook saves those values to a file. The hook reads and writes UTF-8 whatever your system's language settings, so names with accents or non-Latin letters work on Windows too.
 - **Tokens and cost:** Claude Code saves each session as a JSONL file. The widget reads only the new lines, counts each request's `usage` block once, and prices it by model.
 - **Single instance:** starting the widget a second time just shows the copy that's already running, using a local socket.
 
@@ -343,7 +377,10 @@ Prices are in the `PRICES` table at the top of [`src/claude_usage_widget/usage.p
 |---|---|---|---|
 | App, venv, settings, data | `%LOCALAPPDATA%\claude-usage-widget` | `~/Library/Application Support/claude-usage-widget` | `~/.local/share/claude-usage-widget` |
 | Start at login | Registry `HKCU\…\Run\ClaudeUsageWidget` | `~/Library/LaunchAgents/io.github.claude-usage-widget.plist` | `~/.config/autostart/claude-usage-widget.desktop` |
+| GNOME top-bar pills | | | `~/.local/share/gnome-shell/extensions/claude-usage@local` |
 | Claude Code setting changed | `~/.claude/settings.json` → `statusLine` | same | same |
+
+The installer only changes the `statusLine` entry in Claude Code's settings and keeps everything else. If `settings.json` is a symlink (for example from a dotfiles manager), it writes through the link and keeps it.
 
 ## 🔒 Privacy
 
@@ -366,6 +403,15 @@ QT_QPA_PLATFORM=offscreen python docs/make_media.py
 python docs/make_diagram.py docs/how-it-works.svg
 ```
 
+To try the installer or `--setup` / `--teardown` without touching your real Claude Code settings, point both folders somewhere temporary:
+
+```bash
+CLAUDE_CONFIG_DIR=$(mktemp -d) CLAUDE_USAGE_WIDGET_HOME=$(mktemp -d) \
+  python3 install.py --no-launch --no-autostart --no-gnome-extension --skip-lib-check
+```
+
+**Working on this with Claude Code:** the repo includes a Claude Code setup. [`CLAUDE.md`](CLAUDE.md) holds the project rules (standard-library-only modules, Python 3.9 syntax, never touching your real settings, where colors and thresholds are duplicated), and `.claude/` adds shared permissions, a hook that syntax-checks every Python file Claude edits, the `update-prices` and `regen-media` skills, and a `cross-platform-reviewer` agent. Personal overrides go in `.claude/settings.local.json` or `CLAUDE.local.md`, which git ignores.
+
 CI runs the unit tests, the real installer, a headless render, a status line check and the uninstaller on **Windows, macOS and Linux** (Python 3.9 and 3.13; 3.10 and 3.13 on Linux) for every push.
 
 <details>
@@ -373,14 +419,19 @@ CI runs the unit tests, the real installer, a headless render, a status line che
 
 ```
 src/claude_usage_widget/
+  __main__.py    command line (--toggle, --quit, --screenshot, --setup, --teardown)
   app.py         Qt widget, tray icon, single instance
   usage.py       transcript parsing, prices, limits, notifications (standard library only)
   system.py      start at login, status line hook, notifications, window tweaks per OS
-  statusline.py  the Claude Code status line hook
-  paths.py       per-OS file locations
+  statusline.py  the Claude Code status line hook (standard library only)
+  paths.py       per-OS file locations (standard library only)
+  demo.py        sample data for screenshots
 gnome-extension/claude-usage@local/   optional GNOME top-bar pills
 install.py     cross-platform installer and uninstaller (standard library only)
+tests/         unit tests (no display or Qt needed)
 docs/          README images and the scripts that render them
+CLAUDE.md      project guide for Claude Code
+.claude/       Claude Code settings, skills and review agent
 ```
 </details>
 

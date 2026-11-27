@@ -6,7 +6,7 @@
       "Bash(python3 -m unittest:*)",
       "Bash(QT_QPA_PLATFORM=offscreen python -m claude_usage_widget --screenshot:*)",
       "Bash(QT_QPA_PLATFORM=offscreen python docs/make_media.py)",
-      "Bash(python docs/make_diagram.py)",
+      "Bash(python docs/make_diagram.py docs/how-it-works.svg)",
       "Bash(python -m py_compile:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",

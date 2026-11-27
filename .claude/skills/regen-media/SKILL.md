@@ -9,7 +9,7 @@ description: Regenerate the README images in docs/ (widget.png, demo.gif, tray.p
 2. Render:
    ```bash
    QT_QPA_PLATFORM=offscreen python docs/make_media.py   # widget.png, demo.gif, tray.png
-   python docs/make_diagram.py                           # how-it-works.svg
+   python docs/make_diagram.py docs/how-it-works.svg     # animated data-flow diagram
    ```
    `banner.svg` and `pills.svg` are hand-written — edit them directly if colors or text changed.
 3. Look at every regenerated image with the Read tool before reporting success (fonts missing in
