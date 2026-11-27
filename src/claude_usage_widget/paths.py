@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import sys
+import time
 from pathlib import Path
 
 APP_NAME = "claude-usage-widget"
@@ -104,7 +105,14 @@ def save_json(path: Path, data) -> None:
             json.dump(data, f, indent=2)
         if path.exists():
             shutil.copymode(path, tmp)
-        os.replace(tmp, path)
+        for attempt in range(10):
+            try:
+                os.replace(tmp, path)
+                break
+            except PermissionError:  # Windows: a reader (the widget) has the file open for a moment
+                if not IS_WINDOWS or attempt == 9:
+                    raise
+                time.sleep(0.02)
     finally:
         if tmp.exists():
             tmp.unlink()

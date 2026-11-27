@@ -253,6 +253,69 @@ class CustomHomeTests(unittest.TestCase):
         self.assertTrue((dest / "extension.js").is_file())
 
 
+def load_installer():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("installer", ROOT / "install.py")
+    installer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(installer)
+    return installer
+
+
+class PlatformEdgeTests(unittest.TestCase):
+    def test_no_x11_calls_unless_qt_runs_on_x11(self):
+        from unittest import mock
+        with mock.patch.object(system, "IS_LINUX", True), \
+                mock.patch.dict(os.environ, {"DISPLAY": ":0"}), \
+                mock.patch("ctypes.util.find_library") as find:
+            system.x11_make_sticky(1234, "wayland")  # a Wayland winId is no X window
+            find.assert_not_called()
+
+    def test_desktop_exec_quoting(self):
+        self.assertEqual(system.desktop_exec(["/usr/bin/python3", "-m", "claude_usage_widget"]),
+                         "/usr/bin/python3 -m claude_usage_widget")
+        self.assertEqual(system.desktop_exec(["/home/a b/py", "50%"]), '"/home/a b/py" 50%%')
+        self.assertEqual(system.desktop_exec(["it's", '$X"', "a\\b"]),
+                         '"it\'s" "\\\\$X\\\\"" "a\\\\\\\\b"')  # file text: "it's" "\\$X\\"" "a\\\\b"
+
+    def test_save_retries_while_windows_reader_has_file_open(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d) / "rate_limits.json"
+            real_replace = os.replace
+            calls = []
+
+            def flaky(src, dst):
+                calls.append(1)
+                if len(calls) < 3:
+                    raise PermissionError("in use")
+                real_replace(src, dst)
+            with mock.patch.object(paths, "IS_WINDOWS", True), mock.patch.object(paths.os, "replace", flaky):
+                paths.save_json(target, {"ok": 1})
+            self.assertEqual(paths.load_json(target), {"ok": 1})
+            self.assertEqual(sorted(p.name for p in Path(d).iterdir()), ["rate_limits.json"])
+
+    def test_lib_check_uses_loader_and_gives_up_when_nothing_loads(self):
+        from unittest import mock
+        installer = load_installer()
+        with mock.patch("ctypes.CDLL", side_effect=OSError):
+            self.assertIsNone(installer.missing_linux_libs())  # NixOS-like: can't tell
+        def only_cursor_missing(name):
+            if name == "libxcb-cursor.so.0":
+                raise OSError(name)
+        with mock.patch("ctypes.CDLL", side_effect=only_cursor_missing):
+            self.assertEqual(installer.missing_linux_libs(), ["libxcb-cursor0"])
+
+    def test_store_python_detected(self):
+        installer = load_installer()
+        self.assertTrue(installer.is_store_python(
+            r"C:\Users\a\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0"
+            r"\python.exe"))
+        self.assertTrue(installer.is_store_python(
+            r"C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1_x64__qbz5n2kfra8p0"))
+        self.assertFalse(installer.is_store_python(r"C:\Program Files\Python313\python.exe"))
+        self.assertFalse(installer.is_store_python(r"C:\Users\a\AppData\Local\Programs\Python\Python313\python.exe"))
+
+
 class StatuslineHookTests(unittest.TestCase):
     """Runs the hook the way Claude Code does: a separate process, UTF-8 bytes on stdin and stdout."""
 

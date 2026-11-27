@@ -77,13 +77,31 @@ def stop_running():
 
 # ---------- platform checks ----------
 
+def missing_linux_libs():
+    """Debian/Ubuntu packages for the Qt xcb libraries that can't be loaded; None if we can't tell.
+
+    Asks the dynamic loader directly (ldconfig is in /sbin, often not on a user's PATH). If none
+    of them load, the system probably doesn't use standard library paths (NixOS, Guix): we can't
+    tell, so we don't block the install.
+    """
+    import ctypes
+    missing = []
+    for lib, pkg in LINUX_QT_LIBS.items():
+        try:
+            ctypes.CDLL(lib)
+        except OSError:
+            missing.append(pkg)
+    if len(missing) == len(LINUX_QT_LIBS):
+        return None
+    return missing
+
+
 def check_linux_libs():
     """Qt's X11 backend needs a few xcb libraries that minimal desktops may lack."""
-    try:
-        have = subprocess.run(["ldconfig", "-p"], capture_output=True, text=True).stdout
-    except Exception:
+    missing = missing_linux_libs()
+    if missing is None:
+        info("Could not check the Qt system libraries on this system; continuing.")
         return
-    missing = [pkg for lib, pkg in LINUX_QT_LIBS.items() if lib not in have]
     if missing:
         info("Qt needs some system libraries that are missing:")
         info("  Debian/Ubuntu: sudo apt install -y " + " ".join(missing))
@@ -184,9 +202,23 @@ def remove_hooks():
     system.set_autostart(False)
 
 
+def is_store_python(exe=None):
+    """True for the Microsoft Store build of Python (it runs inside an app package)."""
+    places = [exe] if exe else [sys.executable, sys.base_prefix]
+    return any("\\windowsapps\\" in str(p).lower() or "pythonsoftwarefoundation.python" in str(p).lower()
+               for p in places)
+
+
 def install(args):
     if sys.version_info < (3, 9):
         sys.exit("Python 3.9 or newer is required.")
+    if IS_WINDOWS and is_store_python() and not args.allow_store_python:
+        sys.exit(
+            "This is the Microsoft Store version of Python. Windows keeps its files and registry\n"
+            "changes in a private copy, so Claude Code and start at login would not find the widget.\n"
+            "Install Python from https://www.python.org/downloads/windows/ (or: winget install\n"
+            "Python.Python.3.13), then run this installer with that Python: py install.py\n"
+            "(To try anyway: add --allow-store-python.)")
     print(f"Installing Claude Usage Widget into {paths.data_dir()}")
 
     if IS_LINUX:
@@ -280,6 +312,8 @@ def main():
     ap.add_argument("--no-launch", action="store_true", help="don't start the widget after installing")
     ap.add_argument("--no-gnome-extension", action="store_true", help="Linux: skip the GNOME top-bar extension")
     ap.add_argument("--skip-lib-check", action="store_true", help="Linux: continue even if Qt libraries are missing")
+    ap.add_argument("--allow-store-python", action="store_true",
+                    help="Windows: install even with the Microsoft Store Python (not recommended)")
     args = ap.parse_args()
     uninstall(args) if args.uninstall else install(args)
 

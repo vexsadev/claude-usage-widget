@@ -50,13 +50,30 @@ def _mac_agent_file():
     return Path.home() / "Library" / "LaunchAgents" / f"{MAC_AGENT_ID}.plist"
 
 
+DESKTOP_RESERVED = set(' \t\n"\'\\><~|&;$*?#()`')
+
+
+def desktop_exec(cmd):
+    """argv -> Exec= value per the Desktop Entry spec.
+
+    Arguments with reserved characters go in double quotes with " ` $ \\ backslash-escaped; then
+    the string-value escape doubles every backslash, and % becomes %% (field codes).
+    """
+    out = []
+    for a in map(str, cmd):
+        if any(ch in DESKTOP_RESERVED for ch in a) or not a:
+            a = '"' + "".join("\\" + ch if ch in '"`$\\' else ch for ch in a) + '"'
+        out.append(a)
+    return " ".join(out).replace("\\", "\\\\").replace("%", "%%")
+
+
 def desktop_entry(cmd):
     return "\n".join([
         "[Desktop Entry]",
         "Type=Application",
         "Name=Claude Usage Widget",
         "Comment=Live Claude Code usage: plan limits, tokens and cost",
-        "Exec=" + " ".join(shlex.quote(c) for c in cmd),
+        "Exec=" + desktop_exec(cmd),
         "Icon=utilities-system-monitor",
         "Terminal=false",
         "Categories=Utility;",
@@ -187,12 +204,14 @@ def gnome_extension_active():
         return False
 
 
-def x11_make_sticky(win_id):
+def x11_make_sticky(win_id, qt_platform):
     """Ask the X11 window manager to show the window on all workspaces (best effort).
 
     Sets _NET_WM_DESKTOP=0xFFFFFFFF and _NET_WM_STATE=[STICKY, ABOVE] before the window is mapped.
+    Only when Qt itself runs on X11 ("xcb"): on Wayland, winId() is not an X window, and the
+    BadWindow error would make Xlib's default handler exit the whole process.
     """
-    if not IS_LINUX or not os.environ.get("DISPLAY"):
+    if not IS_LINUX or qt_platform != "xcb" or not os.environ.get("DISPLAY"):
         return
     try:
         import ctypes

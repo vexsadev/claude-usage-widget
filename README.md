@@ -135,6 +135,7 @@ New to the terminal? Follow the step-by-step guide for your system below. 👇
 - Download it from <https://www.python.org/downloads/windows/> and run the installer.
 - **Tick "Add python.exe to PATH"** on the first screen.
 - Or, in PowerShell: `winget install Python.Python.3.13`
+- Don't use the **Microsoft Store** version of Python: Windows keeps its files in a private copy where Claude Code can't find the widget. The installer stops and tells you if it detects it.
 
 **2. Download this project.**
 - **With Git:** run `git clone https://github.com/vexsadev/claude-usage-widget.git` in PowerShell.

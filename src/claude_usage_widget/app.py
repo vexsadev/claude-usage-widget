@@ -159,7 +159,7 @@ class Widget(QWidget):
     def restore(self):
         self.place()
         if IS_LINUX:
-            system.x11_make_sticky(int(self.winId()))
+            system.x11_make_sticky(int(self.winId()), QApplication.platformName())
         self.show()
         self.raise_()
         if IS_MAC:
