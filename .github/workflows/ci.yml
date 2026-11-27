@@ -66,6 +66,7 @@ jobs:
         run: |
           "$HOME/Library/Application Support/claude-usage-widget/venv/bin/python" - <<'EOF'
           import time
+          from PySide6.QtGui import QCursor
           from PySide6.QtWidgets import QApplication, QMenu
           app = QApplication([])
           from claude_usage_widget import macbar
@@ -82,7 +83,8 @@ jobs:
           bar.setToolTip("Claude usage")
           bar.button.performClick_(None)  # Objective-C action -> Python callback -> menu below the pills
           app.processEvents()
-          print("menu opened:", menu.isVisible(), "at", menu.pos().x(), menu.pos().y())
+          print("menu opened:", menu.isVisible(), "at", menu.pos().x(), menu.pos().y(),
+                "| pointer", QCursor.pos().x(), QCursor.pos().y())
           assert menu.isVisible()
           menu.hide()
           bar.setVisible(False)

@@ -256,6 +256,23 @@ def mac_accessory_app():
         pass
 
 
+def menu_anchor(item_frame, primary_height, cursor, slack=4):
+    """Where to open the menu-bar menu, in Qt's global coordinates (y grows downwards).
+
+    `item_frame` is the menu-bar item's window frame (x, y, width, height) in Cocoa coordinates,
+    whose y axis grows upwards from the bottom of the primary screen. Normally the menu opens just
+    below the item, like a native menu. If the cursor isn't over the item, the frame can't be
+    trusted (the item isn't in a real menu bar, or macOS reported it oddly), so the menu opens at
+    the mouse pointer instead.
+    """
+    x, y, w, h = item_frame
+    top, bottom = primary_height - (y + h), primary_height - y
+    cx, cy = cursor
+    if w > 0 and h > 0 and x - slack <= cx <= x + w + slack and top - slack <= cy <= bottom + slack:
+        return int(x), int(bottom)
+    return int(cx), int(cy)
+
+
 def mac_all_spaces(win_id):
     """Show the window on every Space and over full-screen apps. Needs pyobjc."""
     if not IS_MAC:

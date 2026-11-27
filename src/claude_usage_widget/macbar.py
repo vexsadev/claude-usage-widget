@@ -8,8 +8,9 @@ widget uses: setToolTip, setVisible, show, showMessage, plus set_limits.
 import time
 
 from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QPoint
+from PySide6.QtGui import QCursor
 
-from . import usage
+from . import system, usage
 from .app import pill_strip_pixmap
 
 _TARGET_CLASS = None
@@ -82,11 +83,17 @@ class MenuBarPills:
         return img
 
     def _clicked(self):
-        """Open the widget's menu just below the pills, like a native menu-bar menu."""
+        """Open the widget's menu just below the pills, or at the mouse pointer if that's unclear."""
         from AppKit import NSScreen
-        frame = self.button.window().frame()
-        primary_h = NSScreen.screens()[0].frame().size.height  # Cocoa's y axis points up from here
-        self.menu.popup(QPoint(int(frame.origin.x), int(primary_h - frame.origin.y)))
+        cursor = QCursor.pos()
+        try:
+            f = self.button.window().frame()
+            frame = (f.origin.x, f.origin.y, f.size.width, f.size.height)
+            primary_h = NSScreen.screens()[0].frame().size.height  # Cocoa's y axis points up from here
+            x, y = system.menu_anchor(frame, primary_h, (cursor.x(), cursor.y()))
+        except Exception:
+            x, y = cursor.x(), cursor.y()
+        self.menu.popup(QPoint(x, y))
 
     # ----- the QSystemTrayIcon methods the widget calls -----
 
