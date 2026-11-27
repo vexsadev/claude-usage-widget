@@ -12,7 +12,8 @@ setVisible, show, showMessage, plus set_limits.
 """
 import time
 
-from PySide6.QtCore import QBuffer, QByteArray, QIODevice
+from PySide6.QtCore import QBuffer, QByteArray, QIODevice, Qt
+from PySide6.QtWidgets import QMenu
 
 from . import usage
 from .app import pill_strip_pixmap
@@ -103,6 +104,9 @@ class MenuBarPills:
         from AppKit import NSMenu, NSMenuItem
         nsmenu.setAutoenablesItems_(False)
         nsmenu.removeAllItems()
+        # Find submenus via their parent, not QAction.menu(): in older PySide6 (Python 3.9 gets 6.9)
+        # the object menu() returns owns the submenu and deletes it when garbage-collected.
+        submenus = [(m.menuAction(), m) for m in qmenu.findChildren(QMenu, options=Qt.FindDirectChildrenOnly)]
         for act in qmenu.actions():
             if not act.isVisible():
                 continue
@@ -112,7 +116,7 @@ class MenuBarPills:
             title = act.text().replace("&&", "\0").replace("&", "").replace("\0", "&")  # Qt mnemonics
             it = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(title, None, "")
             it.setEnabled_(act.isEnabled())
-            sub = act.menu()
+            sub = next((m for a, m in submenus if a == act), None)
             if sub is not None:
                 subns = NSMenu.alloc().initWithTitle_(title)
                 self._fill(subns, sub)
