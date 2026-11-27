@@ -278,13 +278,6 @@ class PlatformEdgeTests(unittest.TestCase):
             system.x11_make_sticky(1234, "wayland")  # a Wayland winId is no X window
             find.assert_not_called()
 
-    def test_menu_bar_menu_position(self):
-        # 1440x900 screen; item 232x24 pt at the top right, so Cocoa y = 900 - 24
-        frame = (1100, 876, 232, 24)
-        self.assertEqual(system.menu_anchor(frame, 900, (1150, 10)), (1100, 24))  # just below the pills
-        self.assertEqual(system.menu_anchor(frame, 900, (5, 737)), (5, 737))      # pointer elsewhere
-        self.assertEqual(system.menu_anchor((0, 0, 0, 0), 900, (40, 12)), (40, 12))  # no real frame
-
     def test_desktop_exec_quoting(self):
         self.assertEqual(system.desktop_exec(["/usr/bin/python3", "-m", "claude_usage_widget"]),
                          "/usr/bin/python3 -m claude_usage_widget")

@@ -2,32 +2,40 @@
 
 Qt's QSystemTrayIcon gives a picture icon a square menu-bar slot on macOS and shrinks anything
 wider to fit, so on macOS we create our own variable-width NSStatusItem with pyobjc (a dependency
-on macOS) and draw the pills with Qt. It offers the parts of the QSystemTrayIcon interface the
-widget uses: setToolTip, setVisible, show, showMessage, plus set_limits.
+on macOS) and draw the pills with Qt.
+
+Its menu is a native NSMenu that mirrors the widget's QMenu, rebuilt just before it opens, so macOS
+opens and places it like any other menu-bar menu. Each native item triggers its QAction.
+
+The class offers the parts of the QSystemTrayIcon interface the widget uses: setToolTip,
+setVisible, show, showMessage, plus set_limits.
 """
 import time
 
-from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QPoint
-from PySide6.QtGui import QCursor
+from PySide6.QtCore import QBuffer, QByteArray, QIODevice
 
-from . import system, usage
+from . import usage
 from .app import pill_strip_pixmap
 
-_TARGET_CLASS = None
+_BRIDGE_CLASS = None
 
 
-def _target_class():
-    """An Objective-C object whose clicked: action calls back into Python (defined once per process)."""
-    global _TARGET_CLASS
-    if _TARGET_CLASS is None:
+def _bridge_class():
+    """NSMenu delegate and menu-item target that calls back into Python (defined once per process)."""
+    global _BRIDGE_CLASS
+    if _BRIDGE_CLASS is None:
+        import objc
         from Foundation import NSObject
 
-        class ClaudeUsageMenuBarTarget(NSObject):
-            def clicked_(self, _sender):
-                self.callback()
+        class ClaudeUsageMenuBridge(NSObject, protocols=[objc.protocolNamed("NSMenuDelegate")]):
+            def menuNeedsUpdate_(self, nsmenu):  # called by macOS right before the menu opens
+                self.owner.refresh_menu()
 
-        _TARGET_CLASS = ClaudeUsageMenuBarTarget
-    return _TARGET_CLASS
+            def activate_(self, item):  # target/action of every native item
+                self.owner.trigger(item.tag())
+
+        _BRIDGE_CLASS = ClaudeUsageMenuBridge
+    return _BRIDGE_CLASS
 
 
 def create(menu):
@@ -42,19 +50,22 @@ class MenuBarPills:
     PILL_HEIGHT = 18  # points; the menu bar is 22-24 points (37 on notched MacBooks)
 
     def __init__(self, menu):
-        from AppKit import (NSEventMaskLeftMouseUp, NSEventMaskRightMouseUp, NSStatusBar,
-                            NSVariableStatusItemLength)
+        from AppKit import NSMenu, NSStatusBar, NSVariableStatusItemLength
         self.menu = menu
         self.bar = NSStatusBar.systemStatusBar()
         self.item = self.bar.statusItemWithLength_(NSVariableStatusItemLength)
         self.button = self.item.button()
-        self._target = _target_class().alloc().init()  # the button only holds a weak reference
-        self._target.callback = self._clicked
-        self.button.setTarget_(self._target)
-        self.button.setAction_("clicked:")
-        self.button.sendActionOn_(NSEventMaskLeftMouseUp | NSEventMaskRightMouseUp)
+        self.bridge = _bridge_class().alloc().init()  # NSMenu holds its delegate weakly: keep it here
+        self.bridge.owner = self
+        self.nsmenu = NSMenu.alloc().initWithTitle_("Claude usage")
+        self.nsmenu.setDelegate_(self.bridge)
+        self._actions = {}
+        self.refresh_menu()
+        self.item.setMenu_(self.nsmenu)  # a click opens it below the pills, natively
         self._labels = None
         self.set_limits({})
+
+    # ----- the pills -----
 
     def set_limits(self, limits):
         now = time.time()
@@ -82,18 +93,44 @@ class MenuBarPills:
         img.setSize_((pm.width() / dpr, pm.height() / dpr))  # in points, so it stays sharp on Retina
         return img
 
-    def _clicked(self):
-        """Open the widget's menu just below the pills, or at the mouse pointer if that's unclear."""
-        from AppKit import NSScreen
-        cursor = QCursor.pos()
-        try:
-            f = self.button.window().frame()
-            frame = (f.origin.x, f.origin.y, f.size.width, f.size.height)
-            primary_h = NSScreen.screens()[0].frame().size.height  # Cocoa's y axis points up from here
-            x, y = system.menu_anchor(frame, primary_h, (cursor.x(), cursor.y()))
-        except Exception:
-            x, y = cursor.x(), cursor.y()
-        self.menu.popup(QPoint(x, y))
+    # ----- the native menu, mirroring the QMenu -----
+
+    def refresh_menu(self):
+        self._actions = {}
+        self._fill(self.nsmenu, self.menu)
+
+    def _fill(self, nsmenu, qmenu):
+        from AppKit import NSMenu, NSMenuItem
+        nsmenu.setAutoenablesItems_(False)
+        nsmenu.removeAllItems()
+        for act in qmenu.actions():
+            if not act.isVisible():
+                continue
+            if act.isSeparator():
+                nsmenu.addItem_(NSMenuItem.separatorItem())
+                continue
+            title = act.text().replace("&&", "\0").replace("&", "").replace("\0", "&")  # Qt mnemonics
+            it = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(title, None, "")
+            it.setEnabled_(act.isEnabled())
+            sub = act.menu()
+            if sub is not None:
+                subns = NSMenu.alloc().initWithTitle_(title)
+                self._fill(subns, sub)
+                it.setSubmenu_(subns)
+            else:
+                tag = len(self._actions) + 1
+                self._actions[tag] = act
+                it.setTag_(tag)
+                it.setTarget_(self.bridge)
+                it.setAction_("activate:")
+                if act.isCheckable():
+                    it.setState_(1 if act.isChecked() else 0)  # NSControlStateValueOn / Off
+            nsmenu.addItem_(it)
+
+    def trigger(self, tag):
+        act = self._actions.get(tag)
+        if act is not None and act.isEnabled():
+            act.trigger()
 
     # ----- the QSystemTrayIcon methods the widget calls -----
 

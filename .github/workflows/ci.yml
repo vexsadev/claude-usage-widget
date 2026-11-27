@@ -66,12 +66,26 @@ jobs:
         run: |
           "$HOME/Library/Application Support/claude-usage-widget/venv/bin/python" - <<'EOF'
           import time
-          from PySide6.QtGui import QCursor
+          from PySide6.QtGui import QActionGroup
           from PySide6.QtWidgets import QApplication, QMenu
           app = QApplication([])
           from claude_usage_widget import macbar
+
+          # a menu shaped like the widget's: info row, separator, checkable submenu, plain action
           menu = QMenu()
-          menu.addAction("Quit")
+          info = menu.addAction("5-hour: 96% used")
+          info.setEnabled(False)
+          menu.addSeparator()
+          sub = menu.addMenu("Opacity")
+          grp = QActionGroup(sub)
+          for v in ("50%", "80%"):
+              a = sub.addAction(v)
+              a.setCheckable(True)
+              grp.addAction(a)
+          sub.actions()[0].setChecked(True)
+          fired = []
+          menu.addAction("Hide widget").triggered.connect(lambda: fired.append("hide"))
+
           bar = macbar.MenuBarPills(menu)  # directly, so errors aren't hidden by create()'s fallback
           now = time.time()
           bar.set_limits({"five_hour": (96, now + 2900), "seven_day": (41, now + 360000)})
@@ -80,13 +94,25 @@ jobs:
           print(f"menu-bar image {size.width:.0f} x {size.height:.0f} pt; {label}")
           assert size.width > 4 * size.height, size
           assert "96% 5h" in label and "41% wk" in label, label
-          bar.setToolTip("Claude usage")
-          bar.button.performClick_(None)  # Objective-C action -> Python callback -> menu below the pills
+
+          ns = bar.item.menu()
+          assert ns is bar.nsmenu and ns.delegate() is bar.bridge
+          info.setText("5-hour: 97% used")
+          ns.delegate().menuNeedsUpdate_(ns)  # what macOS calls right before opening it
+          titles = [ns.itemAtIndex_(i).title() for i in range(ns.numberOfItems())]
+          print("native menu:", titles)
+          assert titles == ["5-hour: 97% used", "", "Opacity", "Hide widget"], titles
+          assert not ns.itemAtIndex_(0).isEnabled() and ns.itemAtIndex_(1).isSeparatorItem()
+          opacity = ns.itemAtIndex_(2).submenu()
+          assert [opacity.itemAtIndex_(i).state() for i in range(2)] == [1, 0]
+
+          opacity.performActionForItemAtIndex_(1)  # native click -> QAction -> group exclusivity
+          ns.performActionForItemAtIndex_(3)
           app.processEvents()
-          print("menu opened:", menu.isVisible(), "at", menu.pos().x(), menu.pos().y(),
-                "| pointer", QCursor.pos().x(), QCursor.pos().y())
-          assert menu.isVisible()
-          menu.hide()
+          print("checked:", [a.isChecked() for a in sub.actions()], "fired:", fired)
+          assert [a.isChecked() for a in sub.actions()] == [False, True]
+          assert fired == ["hide"]
+          bar.setToolTip("Claude usage")
           bar.setVisible(False)
           EOF
 
